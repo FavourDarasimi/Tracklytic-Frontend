@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaRegUser } from "react-icons/fa6";
 import { GoUpload } from "react-icons/go";
 import { FiSave } from "react-icons/fi";
-import Sarah from "../../assets/sarah.jpg";
+import { authService } from "@/services/api";
 
 const Profile = ({ user }) => {
   const [profile, setProfile] = useState({
@@ -34,8 +34,31 @@ const Profile = ({ user }) => {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsSaving(true);
+    setSaveMessage("");
+
+    try {
+      await authService.updateProfile({
+        username: profile.username,
+        email: profile.email,
+        last_name: profile.lastName,
+        age: profile.age ? Number(profile.age) : undefined,
+        phone_number: profile.phoneNumber,
+        occupation: profile.occupation,
+        bio: profile.bio,
+      });
+      setSaveMessage("Profile saved successfully!");
+    } catch (error) {
+      setSaveMessage(error?.message || "Failed to save profile");
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveMessage(""), 3000);
+    }
   };
 
   return (
@@ -50,12 +73,20 @@ const Profile = ({ user }) => {
         Update your account profile information.
       </p>
 
+      {saveMessage && (
+        <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${
+          saveMessage.includes("successfully")
+            ? "bg-green-50 text-green-700 border-l-4 border-green-600"
+            : "bg-red-50 text-red-700 border-l-4 border-red-600"
+        }`}>
+          {saveMessage}
+        </div>
+      )}
+
       <div className="flex items-center gap-x-4 mt-5">
-        <img
-          src={Sarah}
-          alt="Profile"
-          className="rounded-full w-20 h-20 md:w-28 md:h-28 object-cover flex-shrink-0"
-        />
+        <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-2xl md:text-4xl flex-shrink-0">
+          {profile.username?.charAt(0)?.toUpperCase() || "U"}
+        </div>
         <div className="space-y-2">
           <label className="flex items-center gap-x-2 px-3 py-2 border border-gray-200 rounded-lg w-fit bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
             <GoUpload size={16} className="text-gray-500" />
@@ -175,10 +206,11 @@ const Profile = ({ user }) => {
 
           <button
             type="submit"
-            className="flex items-center gap-x-2 bg-green-600 text-white py-2 px-5 rounded-xl text-sm md:text-[15px] font-medium hover:bg-green-700 transition-colors mt-2"
+            disabled={isSaving}
+            className="flex items-center gap-x-2 bg-green-600 text-white py-2 px-5 rounded-xl text-sm md:text-[15px] font-medium hover:bg-green-700 transition-colors mt-2 disabled:opacity-60"
           >
             <FiSave size={16} />
-            Save Changes
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </form>
       </div>

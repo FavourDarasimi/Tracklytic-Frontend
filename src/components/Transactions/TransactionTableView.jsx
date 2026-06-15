@@ -72,10 +72,10 @@ const TransactionTableView = ({ transactions = [], isLoading = false }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {transactions.map((transaction, idx) => (
+          {transactions.map((transaction) => (
             <motion.tr
-              key={idx}
-              onMouseEnter={() => setHoveredId(idx)}
+              key={transaction.id}
+              onMouseEnter={() => setHoveredId(transaction.id)}
               onMouseLeave={() => setHoveredId(null)}
               className=""
             >
@@ -142,9 +142,9 @@ const TransactionTableView = ({ transactions = [], isLoading = false }) => {
   // Mobile Card View
   const MobileCards = () => (
     <div className="md:hidden space-y-3">
-      {transactions.map((transaction, idx) => (
+      {transactions.map((transaction) => (
         <motion.div
-          key={idx}
+          key={transaction.id}
           className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
         >
           {/* Header */}
@@ -189,13 +189,13 @@ const TransactionTableView = ({ transactions = [], isLoading = false }) => {
             <div className="relative">
               <button
                 onClick={() =>
-                  setShowMobileMenu(showMobileMenu === idx ? null : idx)
+                  setShowMobileMenu(showMobileMenu === transaction.id ? null : transaction.id)
                 }
                 className="p-2 hover:bg-gray-100 text-gray-600 rounded-lg transition-colors"
               >
                 <FaEllipsis size={14} />
               </button>
-              {showMobileMenu === idx && (
+              {showMobileMenu === transaction.id && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}

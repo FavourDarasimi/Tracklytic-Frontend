@@ -263,6 +263,26 @@ export const changePassword = async (data) => {
   }
 };
 
+/**
+ * Update user profile
+ * @param {Object} profileData - Fields to update
+ * @returns {Promise<Object>} - Updated user data
+ */
+export const updateProfile = async (profileData) => {
+  try {
+    const response = await axiosInstance.patch(
+      API_CONFIG.ENDPOINTS.AUTH.CURRENT_USER,
+      profileData,
+    );
+    return response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
 export default {
   login,
   register,
@@ -276,4 +296,5 @@ export default {
   resendActivationEmail,
   activateAccount,
   changePassword,
+  updateProfile,
 };

@@ -3,6 +3,7 @@ import Footer from "../components/Footer";
 import { useNavigate, useLocation } from "react-router-dom";
 import ModernNavbar from "../components/ModernNavbar";
 import { useAuth } from "../hooks/useAuth";
+import { validateEmail, validatePassword, validatePasswordConfirm, validateRequired } from "../utils/validation";
 
 const Authentication = () => {
   const navigate = useNavigate();
@@ -22,22 +23,21 @@ const Authentication = () => {
   const validateForm = () => {
     setError("");
 
-    if (!email.trim()) return (setError("Email is required"), false);
+    const emailErr = validateEmail(email);
+    if (emailErr) return (setError(emailErr), false);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email))
-      return (setError("Please enter a valid email address"), false);
-
-    if (!password) return (setError("Password is required"), false);
-    if (password.length < 8)
-      return (setError("Password must be at least 8 characters long"), false);
+    const passwordErr = validatePassword(password);
+    if (passwordErr) return (setError(passwordErr), false);
 
     if (authState === "signup") {
-      if (!firstName.trim() || !lastName.trim())
-        return (setError("First and last name are required"), false);
+      const firstNameErr = validateRequired(firstName, "First name");
+      if (firstNameErr) return (setError(firstNameErr), false);
 
-      if (password !== passwordConfirm)
-        return (setError("Passwords do not match"), false);
+      const lastNameErr = validateRequired(lastName, "Last name");
+      if (lastNameErr) return (setError(lastNameErr), false);
+
+      const confirmErr = validatePasswordConfirm(password, passwordConfirm);
+      if (confirmErr) return (setError(confirmErr), false);
     }
 
     return true;

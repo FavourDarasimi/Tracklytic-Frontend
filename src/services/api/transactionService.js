@@ -14,17 +14,9 @@ import { getErrorMessage } from "./errorHandler";
  */
 export const addTransaction = async (transactionData) => {
   try {
-    const config = {};
-    if (transactionData instanceof FormData) {
-      config.headers = {
-        "Content-Type": "multipart/form-data",
-      };
-    }
-
     const response = await axiosInstance.post(
-      API_CONFIG.ENDPOINTS.TRACKER.ADD_TRANSACTION,
+      API_CONFIG.ENDPOINTS.TRACKER.TRANSACTIONS,
       transactionData,
-      config,
     );
 
     // Backend returns { success, message, data }
@@ -47,11 +39,6 @@ export const uploadReceipt = async (formData) => {
     const response = await axiosInstance.post(
       API_CONFIG.ENDPOINTS.TRACKER.UPLOAD_RECEIPT,
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
     );
 
     // Backend returns { success, message, data }
@@ -71,9 +58,10 @@ export const uploadReceipt = async (formData) => {
 export const getTransactions = async () => {
   try {
     const response = await axiosInstance.get(
-      API_CONFIG.ENDPOINTS.TRACKER.GET_TRANSACTIONS,
+      API_CONFIG.ENDPOINTS.TRACKER.TRANSACTIONS,
     );
-    return response.data.data || response.data;
+    const data = response.data;
+    return data.results || data.data || data;
   } catch (error) {
     throw {
       message: getErrorMessage(error),

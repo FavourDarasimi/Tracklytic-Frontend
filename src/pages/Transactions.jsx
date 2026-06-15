@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FaFileExport } from "react-icons/fa6";
 import TransactionHeader from "../components/Transactions/TransactionHeader";
@@ -9,7 +10,7 @@ import EmptyState from "../components/Transactions/EmptyState";
 import Pagination from "../components/Transactions/Pagination";
 import AddTransactionForm from "../components/AddTransactionForm";
 import * as transactionService from "../services/api/transactionService";
-import * as categoryService from "../services/api/categoryService";
+import { useCategoryContext } from "../context/CategoryContext";
 
 const Transactions = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -27,11 +28,20 @@ const Transactions = () => {
     dateFrom: "",
     dateTo: "",
   });
-  const [transactions, setTransactions] = useState([]);
-  const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
+  const {
+    data: transactions = [],
+    isLoading: isTransactionsLoading,
+    error: fetchError,
+    refetch: refetchTransactions,
+  } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => {
+      const data = await transactionService.getTransactions();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+  const { categories, refreshCategories } = useCategoryContext();
+  const [addError, setAddError] = useState(null);
 
   const containerRef = useRef(null);
 
@@ -50,40 +60,6 @@ const Transactions = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isFilterOpen]);
-
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      setIsTransactionsLoading(true);
-      setFetchError(null);
-
-      try {
-        const data = await transactionService.getTransactions();
-        setTransactions(Array.isArray(data) ? data : []);
-      } catch (error) {
-        setFetchError(error?.message || "Unable to load transactions.");
-      } finally {
-        setIsTransactionsLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setIsCategoriesLoading(true);
-      try {
-        const data = await categoryService.getCategories();
-        setCategories(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load categories", error);
-      } finally {
-        setIsCategoriesLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const getTransactionCategory = (transaction) => {
     if (!transaction) return "Uncategorized";
@@ -120,7 +96,7 @@ const Transactions = () => {
   });
 
   // Pagination
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const endIdx = startIdx + itemsPerPage;
@@ -149,24 +125,16 @@ const Transactions = () => {
   };
 
   const handleAddTransaction = async (data) => {
-    setFetchError(null);
+    setAddError(null);
     try {
       const created = await transactionService.addTransaction(data);
       if (created) {
-        // Find the category object from the categories list
-        const categoryObj = categories.find(
-          (cat) => cat.id === created.category,
-        );
-        const transactionWithCategory = {
-          ...created,
-          category: categoryObj || created.category, // Use object if found, otherwise keep ID
-        };
-        setTransactions((prev) => [transactionWithCategory, ...prev]);
+        refetchTransactions();
         setCurrentPage(1);
         setIsModalOpen(false);
       }
     } catch (error) {
-      setFetchError(error?.message || "Unable to save transaction.");
+      setAddError(error?.message || "Unable to save transaction.");
     }
   };
 
@@ -241,9 +209,9 @@ const Transactions = () => {
           )}
 
           {/* Transactions Table or Empty State */}
-          {fetchError && (
+          {(fetchError || addError) && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {fetchError}
+              {fetchError?.message || addError}
             </div>
           )}
 

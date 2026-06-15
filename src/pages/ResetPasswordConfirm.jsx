@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import ModernNavbar from "../components/ModernNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
+import { validatePassword, validatePasswordConfirm, validateResetLink } from "../utils/validation";
 
 const ResetPasswordConfirm = () => {
   const navigate = useNavigate();
@@ -21,33 +22,20 @@ const ResetPasswordConfirm = () => {
   const token = searchParams.get("token");
 
   useEffect(() => {
-    if (!uid || !token) {
-      setError("Invalid reset link. Please request a new password reset.");
+    const linkErr = validateResetLink(uid, token);
+    if (linkErr) {
+      setError(linkErr);
     }
   }, [uid, token]);
 
   const validateForm = () => {
     setError("");
 
-    if (!newPassword) {
-      setError("New password is required");
-      return false;
-    }
+    const passwordErr = validatePassword(newPassword);
+    if (passwordErr) return (setError(passwordErr), false);
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return false;
-    }
-
-    if (!confirmPassword) {
-      setError("Password confirmation is required");
-      return false;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
+    const confirmErr = validatePasswordConfirm(newPassword, confirmPassword);
+    if (confirmErr) return (setError(confirmErr), false);
 
     return true;
   };

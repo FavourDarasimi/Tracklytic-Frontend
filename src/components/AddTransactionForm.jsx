@@ -3,6 +3,8 @@ import { X, Upload } from "lucide-react";
 import * as transactionService from "../services/api/transactionService";
 
 const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
+  const today = new Date().toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
     party_name: "",
     amount: "",
@@ -10,7 +12,7 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
     category: "",
     notes: "",
     receipt: null,
-    transaction_date: new Date().toISOString().split("T")[0],
+    transaction_date: today,
     add_savings: false,
     savings_percentage: "",
     recurring: false,
@@ -48,34 +50,56 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setFormData((prev) => ({
-      ...prev,
-      receipt: file,
-    }));
-
-    // Reset previous states
+    setFormData((prev) => ({ ...prev, receipt: file }));
     setReceiptParseError("");
     setReceiptParsing(true);
 
-    // Create FormData for receipt parsing
-    const formData = new FormData();
-    formData.append("receipt", file);
+    const uploadPayload = new FormData();
+    uploadPayload.append("receipt", file);
 
     try {
-      // Call the parse receipt endpoint
-      const extractedData = await transactionService.uploadReceipt(formData);
+      const extractedData =
+        await transactionService.uploadReceipt(uploadPayload);
 
-      // Populate form with extracted data
-      setFormData((prev) => ({
-        ...prev,
-        party_name: extractedData.party_name || prev.party_name,
-        amount: extractedData.amount || prev.amount,
-        type: extractedData.type || prev.type,
-        category: extractedData.category || prev.category,
-        notes: extractedData.notes || prev.notes,
-        transaction_date:
-          extractedData.transaction_date || prev.transaction_date,
-      }));
+      setFormData((prev) => {
+        // ── Category ────────────────────────────────────────────────────────
+        const rawCategory =
+          typeof extractedData.category === "object"
+            ? extractedData.category?.name || extractedData.category?.id
+            : extractedData.category;
+
+        const matchedCategory = categories.find(
+          (c) =>
+            c.name?.toLowerCase() === String(rawCategory || "").toLowerCase(),
+        );
+
+        const sanitizedCategory = rawCategory
+          ? (matchedCategory?.id ?? rawCategory)
+          : prev.category;
+
+        // ── Type — unwrap array e.g. ["Expense"] → "Expense" ────────────────
+        const rawType = Array.isArray(extractedData.type)
+          ? extractedData.type[0]
+          : extractedData.type;
+        const sanitizedType = rawType || prev.type;
+
+        // ── Date — keep as YYYY-MM-DD; T00:00:00 is added at submit time ───
+        const rawDate = extractedData.transaction_date || "";
+        const sanitizedDate = rawDate
+          ? rawDate.split("T")[0]
+          : prev.transaction_date;
+
+        return {
+          ...prev,
+          party_name: extractedData.party_name || prev.party_name,
+          amount:
+            extractedData.amount != null ? extractedData.amount : prev.amount,
+          type: sanitizedType,
+          category: sanitizedCategory,
+          notes: extractedData.notes || prev.notes,
+          transaction_date: sanitizedDate,
+        };
+      });
     } catch (error) {
       console.error("Failed to parse receipt:", error);
       setReceiptParseError("Parsing not available right now");
@@ -84,50 +108,75 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
     }
   };
 
+  const sanitizeValue = (value) => {
+    if (typeof value === "string") return value.trim();
+    return value;
+  };
+
   const handleAddTransaction = async (e) => {
     e.preventDefault();
     setFormError("");
     setSubmitting(true);
 
     try {
-      let payload;
+      const receiptFile = formData.receipt;
 
-      // Normalize values FIRST
-      const normalizedData = {
-        ...formData,
-        amount: formData.amount ? Number(formData.amount) : null,
-        category: formData.category ? Number(formData.category) : null,
+      const parsedCategory = formData.category
+        ? Number(formData.category)
+        : undefined;
+
+      const payloadData = {
+        party_name: sanitizeValue(formData.party_name) || undefined,
+        amount: formData.amount ? Number(formData.amount) : undefined,
+        type: formData.type,
+        // Drop category entirely if it resolved to NaN (unmatched receipt parse)
+        category:
+          parsedCategory && !isNaN(parsedCategory) ? parsedCategory : undefined,
+        notes: sanitizeValue(formData.notes) || undefined,
+        // Append Z so Django gets a valid timezone-aware datetime
+        transaction_date: formData.transaction_date
+          ? `${formData.transaction_date}T00:00:00Z`
+          : undefined,
+        add_savings: formData.add_savings,
         savings_percentage: formData.savings_percentage
           ? Number(formData.savings_percentage)
-          : null,
+          : undefined,
+        recurring: formData.recurring,
+        savings_note: sanitizeValue(formData.savings_note) || undefined,
       };
 
-      if (formData.receipt) {
+      let payload;
+
+      if (receiptFile) {
         payload = new FormData();
 
-        Object.entries(normalizedData).forEach(([key, value]) => {
-          if (key === "receipt") {
-            if (value) payload.append("receipt", value);
-            return;
-          }
+        Object.entries(payloadData).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
 
-          // 🚨 IMPORTANT: skip empty values
-          if (value !== null && value !== "" && value !== undefined) {
-            payload.append(key, value);
+          if (typeof value === "boolean") {
+            // Must be "true"/"false" strings, not true/false JS booleans
+            payload.append(key, value ? "true" : "false");
+          } else {
+            // Numbers, strings — all safe to coerce via String()
+            payload.append(key, String(value));
           }
         });
+
+        payload.append("receipt", receiptFile);
       } else {
-        payload = normalizedData;
+        payload = Object.fromEntries(
+          Object.entries(payloadData).filter(
+            ([, v]) => v !== undefined && v !== null,
+          ),
+        );
       }
 
       const created = await transactionService.addTransaction(payload);
 
-      // ✅ Update parent (MainLayout or wherever)
       if (onSubmit) {
         onSubmit(created);
       }
 
-      // Reset form
       setFormData({
         party_name: "",
         amount: "",
@@ -135,7 +184,7 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
         category: "",
         notes: "",
         receipt: null,
-        transaction_date: new Date().toISOString().split("T")[0],
+        transaction_date: today,
         add_savings: false,
         savings_percentage: "",
         recurring: false,
@@ -150,53 +199,6 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
       setSubmitting(false);
     }
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setFormError("");
-  //   setSubmitting(true);
-
-  //   try {
-  //     let payload;
-  //     if (formData.receipt) {
-  //       payload = new FormData();
-  //       Object.entries(formData).forEach(([key, value]) => {
-  //         if (key === "receipt") {
-  //           if (value) payload.append("receipt", value);
-  //           return;
-  //         }
-  //         if (value !== null && value !== undefined) {
-  //           payload.append(key, value);
-  //         }
-  //       });
-  //     } else {
-  //       payload = {
-  //         ...formData,
-  //         amount: formData.amount === "" ? null : Number(formData.amount),
-  //       };
-  //     }
-
-  //     await handleAddTransaction(payload);
-  //     setFormData({
-  //       party_name: "",
-  //       amount: "",
-  //       type: "Income",
-  //       category: "",
-  //       notes: "",
-  //       receipt: null,
-  //       transaction_date: new Date().toISOString().split("T")[0],
-  //       add_savings: false,
-  //       savings_percentage: "",
-  //       recurring: false,
-  //       savings_note: "",
-  //     });
-  //     onClose();
-  //   } catch (error) {
-  //     setFormError(error?.message || "Unable to add transaction.");
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
 
   return (
     <>
@@ -354,7 +356,6 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
               />
             </label>
 
-            {/* Loading Progress */}
             {receiptParsing && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 mb-1">
@@ -366,14 +367,12 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
               </div>
             )}
 
-            {/* Error Message */}
             {receiptParseError && (
               <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-2">
                 <p className="text-xs text-red-700">{receiptParseError}</p>
               </div>
             )}
 
-            {/* File Name */}
             {formData.receipt && !receiptParsing && (
               <p className="text-xs text-gray-600 mt-1">
                 ✓ {formData.receipt.name}
@@ -417,7 +416,6 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
             </label>
           </div>
 
-          {/* Savings Percentage (conditionally shown) */}
           {formData.add_savings && (
             <div>
               <label className="text-[14px] font-medium text-gray-600 mb-2 block">
@@ -435,7 +433,6 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
             </div>
           )}
 
-          {/* Savings Note (conditionally shown) */}
           {formData.add_savings && (
             <div>
               <label className="text-[14px] font-medium text-gray-600 mb-2 block">

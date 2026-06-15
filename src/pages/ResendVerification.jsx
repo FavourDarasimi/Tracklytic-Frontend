@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ModernNavbar from "../components/ModernNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
+import { validateEmail } from "../utils/validation";
 
 const ResendVerification = () => {
   const navigate = useNavigate();
@@ -11,17 +12,12 @@ const ResendVerification = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const validateEmail = () => {
+  const validateEmailField = () => {
     setError("");
 
-    if (!email.trim()) {
-      setError("Email is required");
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setError(emailErr);
       return false;
     }
 
@@ -33,7 +29,7 @@ const ResendVerification = () => {
     setError("");
     setSuccessMessage("");
 
-    if (!validateEmail()) {
+    if (!validateEmailField()) {
       return;
     }
 

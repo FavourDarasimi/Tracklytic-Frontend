@@ -17,8 +17,8 @@ export const getCategories = async () => {
       API_CONFIG.ENDPOINTS.TRACKER.CATEGORIES,
     );
 
-    // Backend returns { success, message, data }
-    return response.data.data || response.data;
+    const data = response.data;
+    return data.results || data.data || data;
   } catch (error) {
     throw {
       message: getErrorMessage(error),
@@ -35,7 +35,7 @@ export const getCategories = async () => {
 export const addCategory = async (categoryData) => {
   try {
     const response = await axiosInstance.post(
-      API_CONFIG.ENDPOINTS.TRACKER.ADD_CATEGORY,
+      API_CONFIG.ENDPOINTS.TRACKER.CATEGORIES,
       categoryData,
     );
 

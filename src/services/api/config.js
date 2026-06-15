@@ -26,27 +26,24 @@ export const API_CONFIG = {
     // Tracker endpoints
     TRACKER: {
       // Categories
-      CATEGORIES: "/api/v1/get/categories/",
-      ADD_CATEGORY: "/api/v1/add/category/",
+      CATEGORIES: "/api/v1/categories/",
 
       // Transactions
-      ADD_TRANSACTION: "/api/v1/add/transaction/",
-      GET_TRANSACTIONS: "/api/v1/get/transactions/",
+      TRANSACTIONS: "/api/v1/transactions/",
       UPLOAD_RECEIPT: "/api/v1/transaction/upload/receipt/",
 
       // General Budget
-      ADD_GENERAL_BUDGET: "/api/v1/add/general/budget/",
-      EDIT_GENERAL_BUDGET: (id) => `/api/v1/edit/general/budget/${id}/`,
+      GENERAL_BUDGETS: "/api/v1/general-budgets/",
+      GENERAL_BUDGET: (id) => `/api/v1/general-budgets/${id}/`,
 
       // Category Budget
-      ADD_CATEGORY_BUDGET: "/api/v1/add/category/budget/",
-      EDIT_CATEGORY_BUDGET: (id) => `/api/v1/edit/category/budget/${id}/`,
+      CATEGORY_BUDGETS: "/api/v1/category-budgets/",
+      CATEGORY_BUDGET: (id) => `/api/v1/category-budgets/${id}/`,
 
       // Saving Plans
-      ADD_SAVING_PLAN: "/api/v1/add/saving/plan/",
+      SAVING_PLANS: "/api/v1/saving-plans/",
       CHECK_SAVING_PLAN_STATUS: "/api/v1/check/saving/plan/status/",
       RENEW_SAVING_PLAN: (id) => `/api/v1/renew/saving/plan/${id}/`,
-      USER_SAVING_PLANS: "/api/v1/user/saving/plan/",
 
       // AI Insights
       AI_INSIGHTS: "/api/v1/ai/insights/",

@@ -15,7 +15,7 @@ import { getErrorMessage } from "./errorHandler";
 export const addGeneralBudget = async (budgetData) => {
   try {
     const response = await axiosInstance.post(
-      API_CONFIG.ENDPOINTS.TRACKER.ADD_GENERAL_BUDGET,
+      API_CONFIG.ENDPOINTS.TRACKER.GENERAL_BUDGETS,
       budgetData,
     );
 
@@ -37,8 +37,8 @@ export const addGeneralBudget = async (budgetData) => {
  */
 export const editGeneralBudget = async (id, budgetData) => {
   try {
-    const response = await axiosInstance.put(
-      API_CONFIG.ENDPOINTS.TRACKER.EDIT_GENERAL_BUDGET(id),
+    const response = await axiosInstance.patch(
+      API_CONFIG.ENDPOINTS.TRACKER.GENERAL_BUDGET(id),
       budgetData,
     );
 
@@ -60,7 +60,7 @@ export const editGeneralBudget = async (id, budgetData) => {
 export const addCategoryBudget = async (budgetData) => {
   try {
     const response = await axiosInstance.post(
-      API_CONFIG.ENDPOINTS.TRACKER.ADD_CATEGORY_BUDGET,
+      API_CONFIG.ENDPOINTS.TRACKER.CATEGORY_BUDGETS,
       budgetData,
     );
 
@@ -82,8 +82,8 @@ export const addCategoryBudget = async (budgetData) => {
  */
 export const editCategoryBudget = async (id, budgetData) => {
   try {
-    const response = await axiosInstance.put(
-      API_CONFIG.ENDPOINTS.TRACKER.EDIT_CATEGORY_BUDGET(id),
+    const response = await axiosInstance.patch(
+      API_CONFIG.ENDPOINTS.TRACKER.CATEGORY_BUDGET(id),
       budgetData,
     );
 

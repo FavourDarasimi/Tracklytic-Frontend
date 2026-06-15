@@ -15,7 +15,7 @@ import { getErrorMessage } from "./errorHandler";
 export const addSavingPlan = async (planData) => {
   try {
     const response = await axiosInstance.post(
-      API_CONFIG.ENDPOINTS.TRACKER.ADD_SAVING_PLAN,
+      API_CONFIG.ENDPOINTS.TRACKER.SAVING_PLANS,
       planData,
     );
 
@@ -79,7 +79,7 @@ export const renewSavingPlan = async (id, planData) => {
 export const getUserSavingPlans = async () => {
   try {
     const response = await axiosInstance.get(
-      API_CONFIG.ENDPOINTS.TRACKER.USER_SAVING_PLANS,
+      API_CONFIG.ENDPOINTS.TRACKER.SAVING_PLANS,
     );
 
     // Backend returns { success, message, data } or array directly

@@ -1,67 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
-import MobileSidebar from "./MobileSidebar";
 import MobileNavbar from "./MobileNavbar";
 import AddTransactionForm from "../components/AddTransactionForm";
-import * as categoryService from "../services/api/categoryService";
+import { useCategoryContext } from "../context/CategoryContext";
 
 const MainLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [collapsed, setCollapsed] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [categories, setCategories] = useState([]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await categoryService.getCategories();
-        setCategories(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load categories", error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const { categories } = useCategoryContext();
 
   return (
-    <div className="flex flex-col xl:flex-row">
+    <div className="flex h-dvh overflow-hidden bg-gray-50">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block lg:w-[220px] lg:border-r-[1px] xl:w-[17%] border-gray-200 h-screen lg:fixed lg:left-0 lg:top-0 z-50">
-        <Sidebar />
-      </div>
-
-      {/* Mobile Sidebar */}
-      <MobileSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
       />
 
       {/* Main Content */}
-      <div className="w-full lg:ml-[220px] xl:ml-[17%] xl:w-[83%] min-h-screen py-4 md:py-5 px-4 md:px-6 xl:px-7 bg-gray-50">
-        {/* Mobile Header with Hamburger Menu */}
-        <MobileNavbar
-          onMenuClick={toggleSidebar}
-          onAddTransaction={() => setShowAddTransaction(true)}
-        />
-
+      <main className="flex-1 overflow-y-auto flex flex-col">
         {/* Desktop Header */}
-        <div className="hidden lg:block mb-4">
+        <div className="hidden lg:block sticky top-0 z-30 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200">
           <Navbar onAddTransaction={() => setShowAddTransaction(true)} />
         </div>
 
         {/* Page Content */}
-        <Outlet />
-      </div>
+        <div className="flex-1 px-4 md:px-6 xl:px-7 py-4 md:py-5">
+          <Outlet />
+        </div>
+      </main>
+
+      {/* Mobile Bottom Nav */}
+      <MobileNavbar onAddTransaction={() => setShowAddTransaction(true)} />
 
       {/* Add Transaction Form */}
       <AddTransactionForm
         isOpen={showAddTransaction}
         onClose={() => setShowAddTransaction(false)}
+        onSubmit={() => queryClient.invalidateQueries({ queryKey: ["transactions"] })}
         categories={categories}
       />
     </div>
