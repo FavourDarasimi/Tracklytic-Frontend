@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 const MonthlyExpenses = ({ expenseDistribution = [] }) => {
   const expenses = expenseDistribution.length
     ? expenseDistribution.slice(0, 6).map((expense) => ({
-        name: expense.category || "Expense",
+        name: expense.name || "Expense",
         amount: `₦${expense.amount?.toLocaleString() ?? 0}`,
       }))
     : [{ name: "No data", amount: "₦0" }];

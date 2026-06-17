@@ -30,7 +30,10 @@ const Dashboard = () => {
   const totalTransactionsCount = overview?.total_transactions ?? 0;
   const weeklyTransactionsCount = overview?.weekly_transactions ?? 0;
   const expenseDistribution = overview?.expense_distribution ?? [];
-  const chartData = overview?.chart_data ?? { labels: [], data: [] };
+  const expenseChart = overview?.expense_chart ?? null;
+  const chartData = expenseChart
+    ? { labels: expenseChart.labels, data: expenseChart.values }
+    : { labels: [], data: [] };
 
   const greetingTitle = useMemo(() => {
     const hours = new Date().getHours();
