@@ -4,6 +4,8 @@ import { useAuth } from "../hooks/useAuth";
 import {
   Add01Icon,
   Notification01Icon,
+  Settings01Icon,
+  ArrowDown01Icon,
   Logout01Icon,
 } from "hugeicons-react";
 
@@ -31,6 +33,14 @@ const Navbar = ({ onAddTransaction }) => {
         </div>
 
         <button
+          onClick={() => navigate("/settings")}
+          aria-label="Settings"
+          className="border-1 border-black rounded-full cursor-pointer hover:text-green-600 transition"
+        >
+          <Settings01Icon className="p-[2px] md:p-[5px] w-7 h-7 md:w-8 md:h-8" />
+        </button>
+
+        <button
           onClick={onAddTransaction}
           aria-label="Add a new transaction"
           className={`bg-green-600 outline-none flex items-center gap-x-1 border-2 cursor-pointer text-white rounded-4xl hover:bg-white hover:border-2 hover:border-green-600 hover:text-green-600 transition-colors duration-500 whitespace-nowrap p-[4px] md:py-[10px] md:px-4 text-xs md:text-[14px]`}
@@ -43,16 +53,16 @@ const Navbar = ({ onAddTransaction }) => {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center gap-x-2 px-3 py-2  transition border border-gray-200 rounded-full"
           >
             <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
               {user?.first_name?.charAt(0) || user?.email?.charAt(0) || "U"}
             </div>
-            <div className="hidden md:block">
-              <p className="text-sm font-medium text-gray-700">
-                {user?.first_name || user?.email || "User"}
-              </p>
-            </div>
+            <ArrowDown01Icon
+              className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                showUserMenu ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
           {/* User Dropdown Menu */}

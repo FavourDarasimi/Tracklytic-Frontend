@@ -6,7 +6,6 @@ import {
   Wallet01Icon,
   TransactionIcon,
   ChartIcon,
-  Settings01Icon,
   Logout01Icon,
   ChartLineData01Icon,
   PanelLeftCloseIcon,
@@ -29,16 +28,10 @@ const navItems = [
   {
     key: "budget",
     label: "Budget & Savings",
-    icon: TransactionIcon,
-    disabled: true,
+    icon: ChartLineData01Icon,
+    href: "/budget",
   },
   { key: "statistics", label: "Statistics", icon: ChartIcon, disabled: true },
-  {
-    key: "settings",
-    label: "Settings",
-    icon: Settings01Icon,
-    href: "/settings",
-  },
 ];
 
 const Sidebar = ({ collapsed, onToggle }) => {
@@ -49,7 +42,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
   const getActive = (pathname) => {
     if (pathname.startsWith("/dashboard")) return "dashboard";
     if (pathname.startsWith("/transactions")) return "transactions";
-    if (pathname.startsWith("/settings")) return "settings";
+    if (pathname.startsWith("/budget")) return "budget";
     return "dashboard";
   };
 
@@ -62,8 +55,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
     }
   };
 
-  const navItemClass = (isActive, disabled = false) =>
-    `flex items-center gap-3 text-sm md:text-[15px] px-4 py-3 rounded-full transition-all duration-200 font-medium select-none ${
+  const navItemClass = (isActive, disabled = false, collapsed = false) =>
+    `flex items-center gap-3 text-sm md:text-[15px] ${
+      collapsed ? "justify-center px-0" : "px-4"
+    } py-3 rounded-full transition-all duration-200 font-medium select-none ${
       disabled
         ? "cursor-not-allowed opacity-50"
         : isActive
@@ -102,8 +97,14 @@ const Sidebar = ({ collapsed, onToggle }) => {
               return (
                 <li key={item.key}>
                   <Link to={item.href}>
-                    <div className={navItemClass(isActive, item.disabled)}>
-                      <Icon size={20} />
+                    <div
+                      className={navItemClass(
+                        isActive,
+                        item.disabled,
+                        collapsed,
+                      )}
+                    >
+                      <Icon size={collapsed ? 24 : 20} />
                       {!collapsed && (
                         <span className="text-[14px] md:text-[15px] truncate">
                           {item.label}
@@ -121,8 +122,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
                   className="relative group"
                   title={collapsed ? item.label : undefined}
                 >
-                  <div className={navItemClass(isActive, item.disabled)}>
-                    <Icon size={20} />
+                  <div
+                    className={navItemClass(isActive, item.disabled, collapsed)}
+                  >
+                    <Icon size={collapsed ? 24 : 20} />
                     {!collapsed && (
                       <span className="text-[14px] md:text-[15px] truncate">
                         {item.label}

@@ -235,6 +235,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * Update user in context (e.g., after profile changes)
+   */
+  const updateUser = useCallback((userData) => {
+    setUser(userData);
+  }, []);
+
   const value = {
     // State
     user,
@@ -251,6 +258,7 @@ export const AuthProvider = ({ children }) => {
     resendActivationEmail,
     activateAccount,
     changePassword,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

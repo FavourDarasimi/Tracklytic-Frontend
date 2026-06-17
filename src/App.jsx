@@ -9,6 +9,7 @@ import ResendVerification from "./pages/ResendVerification";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Settings from "./pages/Settings";
+import Budget from "./pages/Budget";
 import MainLayout from "./layout/MainLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { CategoryProvider } from "./context/CategoryContext";
@@ -54,6 +55,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/budget" element={<Budget />} />
             </Route>
           </Routes>
         </div>

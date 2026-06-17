@@ -97,9 +97,47 @@ export const editCategoryBudget = async (id, budgetData) => {
   }
 };
 
+/**
+ * Get all general budgets
+ * @returns {Promise<Array>} - Array of general budget objects
+ */
+export const getGeneralBudgets = async () => {
+  try {
+    const response = await axiosInstance.get(
+      API_CONFIG.ENDPOINTS.TRACKER.GENERAL_BUDGETS,
+    );
+    return response.data.data || response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
+/**
+ * Get all category budgets
+ * @returns {Promise<Array>} - Array of category budget objects
+ */
+export const getCategoryBudgets = async () => {
+  try {
+    const response = await axiosInstance.get(
+      API_CONFIG.ENDPOINTS.TRACKER.CATEGORY_BUDGETS,
+    );
+    return response.data.data || response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
 export default {
   addGeneralBudget,
   editGeneralBudget,
   addCategoryBudget,
   editCategoryBudget,
+  getGeneralBudgets,
+  getCategoryBudgets,
 };
