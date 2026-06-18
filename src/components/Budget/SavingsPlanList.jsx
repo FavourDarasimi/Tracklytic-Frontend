@@ -3,7 +3,7 @@ import { FiTrendingUp } from "react-icons/fi";
 import { IoAddOutline } from "react-icons/io5";
 import SavingsPlanCard from "./SavingsPlanCard";
 
-const SavingsPlanList = ({ plans, isLoading, onAdd, onRenew }) => {
+const SavingsPlanList = ({ plans, isLoading, onAdd, onRenew, onEdit, onDelete }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
@@ -43,6 +43,8 @@ const SavingsPlanList = ({ plans, isLoading, onAdd, onRenew }) => {
           key={plan.id}
           plan={plan}
           onRenew={onRenew}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       ))}
     </div>

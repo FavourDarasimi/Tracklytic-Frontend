@@ -24,12 +24,17 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const currentUser = await authService.getCurrentUser(token);
+          try {
+            const profile = await authService.getUserProfile();
+            currentUser.profile = profile;
+          } catch (e) {
+            console.debug("Could not fetch profile", e);
+          }
           setUser(currentUser);
           setIsAuthenticated(true);
           setError(null);
         } catch (err) {
           console.error("Failed to fetch current user:", err.message);
-          // Token might be invalid, clear it
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
           setUser(null);
@@ -242,6 +247,12 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   }, []);
 
+  const updateProfileData = useCallback(async (profileData) => {
+    const updated = await authService.updateUserProfile(profileData);
+    setUser((prev) => prev ? { ...prev, profile: { ...prev.profile, ...updated } } : prev);
+    return updated;
+  }, []);
+
   const value = {
     // State
     user,
@@ -259,6 +270,7 @@ export const AuthProvider = ({ children }) => {
     activateAccount,
     changePassword,
     updateUser,
+    updateProfileData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

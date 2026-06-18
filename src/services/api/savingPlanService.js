@@ -92,9 +92,51 @@ export const getUserSavingPlans = async () => {
   }
 };
 
+/**
+ * Update a saving plan
+ * @param {number} id - Saving plan ID
+ * @param {Object} planData - Fields to update
+ * @returns {Promise<Object>} - Updated saving plan
+ */
+export const updateSavingPlan = async (id, planData) => {
+  try {
+    const response = await axiosInstance.patch(
+      API_CONFIG.ENDPOINTS.TRACKER.SAVING_PLAN(id),
+      planData,
+    );
+    return response.data.data || response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
+/**
+ * Delete a saving plan
+ * @param {number} id - Saving plan ID
+ * @returns {Promise<Object>}
+ */
+export const deleteSavingPlan = async (id) => {
+  try {
+    const response = await axiosInstance.delete(
+      API_CONFIG.ENDPOINTS.TRACKER.SAVING_PLAN(id),
+    );
+    return response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
 export default {
   addSavingPlan,
   checkSavingPlanStatus,
   renewSavingPlan,
   getUserSavingPlans,
+  updateSavingPlan,
+  deleteSavingPlan,
 };

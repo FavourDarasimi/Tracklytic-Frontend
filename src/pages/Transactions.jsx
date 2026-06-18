@@ -9,6 +9,7 @@ import TransactionTableView from "../components/Transactions/TransactionTableVie
 import EmptyState from "../components/Transactions/EmptyState";
 import Pagination from "../components/Transactions/Pagination";
 import EditTransactionDrawer from "../components/Transactions/EditTransactionDrawer";
+import ConfirmModal from "../components/ConfirmModal";
 import * as transactionService from "../services/api/transactionService";
 import { useCategoryContext } from "../context/CategoryContext";
 
@@ -28,6 +29,7 @@ const Transactions = () => {
   });
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   const {
     data: transactions = [],
@@ -38,7 +40,7 @@ const Transactions = () => {
     queryKey: ["transactions", filters.deleted],
     queryFn: async () => {
       const data = await transactionService.getTransactions(
-        filters.deleted ? { deleted: "all" } : {}
+        filters.deleted ? { deleted: true } : {}
       );
       return Array.isArray(data) ? data : [];
     },
@@ -72,9 +74,7 @@ const Transactions = () => {
       const matchesAmount =
         (!filters.amount_min || Number(transaction.amount || 0) >= Number(filters.amount_min)) &&
         (!filters.amount_max || Number(transaction.amount || 0) <= Number(filters.amount_max));
-      const matchesDeleted = filters.deleted || !transaction.is_deleted;
-
-      return matchesSearch && matchesType && matchesCategory && matchesAmount && matchesDeleted;
+      return matchesSearch && matchesType && matchesCategory && matchesAmount;
     });
   }, [transactions, searchQuery, filters]);
 
@@ -114,28 +114,48 @@ const Transactions = () => {
   }, [refetchTransactions]);
 
   const handleDelete = useCallback(async (transaction) => {
-    if (!window.confirm(`Delete transaction "${transaction.party_name || "Unknown"}" (₦${Number(transaction.amount).toLocaleString()})?`)) return;
-    await transactionService.deleteTransaction(transaction.id);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(transaction.id);
-      return next;
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Transaction",
+      message: `Delete transaction "${transaction.party_name || "Unknown"}" (₦${Number(transaction.amount).toLocaleString()})?`,
+      onConfirm: async () => {
+        await transactionService.deleteTransaction(transaction.id);
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(transaction.id);
+          return next;
+        });
+        await refetchTransactions();
+      },
     });
-    await refetchTransactions();
   }, [refetchTransactions]);
 
   const handleRestore = useCallback(async (transaction) => {
-    if (!window.confirm(`Restore transaction "${transaction.party_name || "Unknown"}"?`)) return;
-    await transactionService.restoreTransaction(transaction.id);
-    await refetchTransactions();
+    setConfirmModal({
+      isOpen: true,
+      title: "Restore Transaction",
+      message: `Restore transaction "${transaction.party_name || "Unknown"}"?`,
+      confirmText: "Restore",
+      variant: "default",
+      onConfirm: async () => {
+        await transactionService.restoreTransaction(transaction.id);
+        await refetchTransactions();
+      },
+    });
   }, [refetchTransactions]);
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.size} selected transaction(s)?`)) return;
-    await transactionService.bulkDeleteTransactions([...selectedIds]);
-    setSelectedIds(new Set());
-    await refetchTransactions();
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Transactions",
+      message: `Delete ${selectedIds.size} selected transaction(s)?`,
+      onConfirm: async () => {
+        await transactionService.bulkDeleteTransactions([...selectedIds]);
+        setSelectedIds(new Set());
+        await refetchTransactions();
+      },
+    });
   }, [selectedIds, refetchTransactions]);
 
   const handleToggleSelect = useCallback((id) => {
@@ -277,6 +297,16 @@ const Transactions = () => {
         onSubmit={handleEditSubmit}
         categories={categories}
         initialData={editingTransaction}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText || "Delete"}
+        variant={confirmModal.variant || "danger"}
       />
     </div>
   );

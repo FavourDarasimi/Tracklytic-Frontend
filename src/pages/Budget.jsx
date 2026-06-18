@@ -7,6 +7,7 @@ import CategoryBudgetList from "../components/Budget/CategoryBudgetList";
 import SavingsPlanList from "../components/Budget/SavingsPlanList";
 import AddBudgetModal from "../components/Budget/AddBudgetModal";
 import AddSavingsModal from "../components/Budget/AddSavingsModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { FiTarget, FiPieChart, FiTrendingUp } from "react-icons/fi";
 
 const Budget = () => {
@@ -26,6 +27,8 @@ const Budget = () => {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
   const [showAddSavings, setShowAddSavings] = useState(false);
+  const [editingSavings, setEditingSavings] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   const fetchGeneralBudgets = useCallback(async () => {
     setIsLoadingGeneral(true);
@@ -117,15 +120,27 @@ const Budget = () => {
   };
 
   const handleDeleteGeneralBudget = useCallback(async (budget) => {
-    if (!window.confirm(`Delete general budget (₦${Number(budget.amount).toLocaleString()})?`)) return;
-    await budgetService.deleteGeneralBudget(budget.id);
-    await fetchGeneralBudgets();
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete General Budget",
+      message: `Delete general budget (₦${Number(budget.amount).toLocaleString()})?`,
+      onConfirm: async () => {
+        await budgetService.deleteGeneralBudget(budget.id);
+        await fetchGeneralBudgets();
+      },
+    });
   }, [fetchGeneralBudgets]);
 
   const handleDeleteCategoryBudget = useCallback(async (budget) => {
-    if (!window.confirm(`Delete category budget for "${budget.category?.name || "Unknown"}"?`)) return;
-    await budgetService.deleteCategoryBudget(budget.id);
-    await fetchCategoryBudgets();
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Category Budget",
+      message: `Delete category budget for "${budget.category?.name || "Unknown"}"?`,
+      onConfirm: async () => {
+        await budgetService.deleteCategoryBudget(budget.id);
+        await fetchCategoryBudgets();
+      },
+    });
   }, [fetchCategoryBudgets]);
 
   const handleCreateSavings = async (data) => {
@@ -145,6 +160,30 @@ const Budget = () => {
       console.error("Failed to renew savings plan", err);
     }
   };
+
+  const handleEditSavings = (plan) => {
+    setEditingSavings(plan);
+    setShowAddSavings(true);
+  };
+
+  const handleUpdateSavings = async (data) => {
+    await savingPlanService.updateSavingPlan(editingSavings.id, data);
+    setEditingSavings(null);
+    setShowAddSavings(false);
+    await fetchSavingsPlans();
+  };
+
+  const handleDeleteSavings = useCallback(async (plan) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Savings Goal",
+      message: `Delete savings goal "${plan.name || "Untitled"}"?`,
+      onConfirm: async () => {
+        await savingPlanService.deleteSavingPlan(plan.id);
+        await fetchSavingsPlans();
+      },
+    });
+  }, [fetchSavingsPlans]);
 
   return (
     <div className="w-full pb-8">
@@ -246,8 +285,10 @@ const Budget = () => {
         <SavingsPlanList
           plans={savingsPlans}
           isLoading={isLoadingSavings}
-          onAdd={() => setShowAddSavings(true)}
+          onAdd={() => { setEditingSavings(null); setShowAddSavings(true); }}
           onRenew={handleRenewSavings}
+          onEdit={handleEditSavings}
+          onDelete={handleDeleteSavings}
         />
       </div>
 
@@ -262,8 +303,17 @@ const Budget = () => {
 
       <AddSavingsModal
         isOpen={showAddSavings}
-        onClose={() => setShowAddSavings(false)}
-        onSubmit={handleCreateSavings}
+        onClose={() => { setShowAddSavings(false); setEditingSavings(null); }}
+        onSubmit={editingSavings ? handleUpdateSavings : handleCreateSavings}
+        initialData={editingSavings}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
       />
     </div>
   );

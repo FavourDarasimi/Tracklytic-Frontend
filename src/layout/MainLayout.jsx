@@ -1,17 +1,26 @@
 import React, { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import MobileNavbar from "./MobileNavbar";
 import AddTransactionForm from "../components/AddTransactionForm";
 import { useCategoryContext } from "../context/CategoryContext";
+import * as savingPlanService from "../services/api/savingPlanService";
 
 const MainLayout = () => {
   const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const { categories } = useCategoryContext();
+
+  const { data: savingsPlans = [] } = useQuery({
+    queryKey: ["saving-plans"],
+    queryFn: async () => {
+      const data = await savingPlanService.getUserSavingPlans();
+      return Array.isArray(data) ? data : [];
+    },
+  });
 
   return (
     <div className="flex h-dvh overflow-hidden bg-gray-50">
@@ -43,6 +52,7 @@ const MainLayout = () => {
         onClose={() => setShowAddTransaction(false)}
         onSubmit={() => queryClient.invalidateQueries({ queryKey: ["transactions"] })}
         categories={categories}
+        savingsPlans={savingsPlans}
       />
     </div>
   );

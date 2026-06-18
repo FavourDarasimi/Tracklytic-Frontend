@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { FiSave } from "react-icons/fi";
 
-const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
+const AddSavingsModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [deadline, setDeadline] = useState("");
@@ -11,9 +11,30 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const isEdit = !!initialData;
+
   useEffect(() => {
     if (!isOpen) return;
-    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    if (initialData) {
+      setName(initialData.name || "");
+      setTargetAmount(initialData.target_amount?.toString() || initialData.savings_amount?.toString() || "");
+      setDeadline(initialData.deadline || "");
+      setDescription(initialData.description || "");
+      setPriority(initialData.priority || "medium");
+    } else {
+      setName("");
+      setTargetAmount("");
+      setDeadline("");
+      setDescription("");
+      setPriority("medium");
+    }
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
@@ -31,7 +52,7 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
     try {
       await onSubmit({
         name: name.trim(),
-        target_amount: Number(targetAmount),
+        savings_amount: Number(targetAmount),
         deadline: deadline || undefined,
         description: description.trim() || undefined,
         priority,
@@ -42,18 +63,28 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
       setDescription("");
       setPriority("medium");
     } catch (err) {
-      setError(err?.message || "Failed to create savings goal");
+      setError(err?.message || "Failed to save savings goal");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center" onClick={onClose}>
-      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 bg-black/30 grid place-items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[19px] font-semibold">New Savings Goal</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer" aria-label="Close">
+          <h2 className="text-[19px] font-semibold">{isEdit ? "Edit Savings Goal" : "New Savings Goal"}</h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
+            aria-label="Close"
+          >
             <RxCross2 size={20} className="text-gray-500" />
           </button>
         </div>
@@ -66,7 +97,9 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-medium text-[14px] text-gray-700 mb-1">Goal Name</label>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">
+              Goal Name
+            </label>
             <input
               type="text"
               value={name}
@@ -78,7 +111,9 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
 
           <div>
-            <label className="block font-medium text-[14px] text-gray-700 mb-1">Target Amount</label>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">
+              Target Amount
+            </label>
             <input
               type="number"
               value={targetAmount}
@@ -92,7 +127,9 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-medium text-[14px] text-gray-700 mb-1">Deadline</label>
+              <label className="block font-medium text-[14px] text-gray-700 mb-1">
+                Deadline
+              </label>
               <input
                 type="date"
                 value={deadline}
@@ -101,7 +138,9 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
               />
             </div>
             <div>
-              <label className="block font-medium text-[14px] text-gray-700 mb-1">Priority</label>
+              <label className="block font-medium text-[14px] text-gray-700 mb-1">
+                Priority
+              </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
@@ -115,7 +154,9 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
 
           <div>
-            <label className="block font-medium text-[14px] text-gray-700 mb-1">Description (optional)</label>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">
+              Description (optional)
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -139,7 +180,7 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
               className="flex items-center gap-x-2 bg-green-600 text-white py-2 px-5 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-60 cursor-pointer"
             >
               <FiSave size={16} />
-              {isSaving ? "Creating..." : "Create Goal"}
+              {isSaving ? "Saving..." : isEdit ? "Update Goal" : "Create Goal"}
             </button>
           </div>
         </form>

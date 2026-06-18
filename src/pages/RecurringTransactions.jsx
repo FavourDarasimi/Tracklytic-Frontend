@@ -5,11 +5,13 @@ import { recurringTransactionService } from "@/services/api";
 import { useCategoryContext } from "../context/CategoryContext";
 import RecurringTransactionTable from "../components/RecurringTransactions/RecurringTransactionTable";
 import RecurringTransactionModal from "../components/RecurringTransactions/RecurringTransactionModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 const RecurringTransactions = () => {
   const { categories } = useCategoryContext();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   const {
     data: items = [],
@@ -35,9 +37,15 @@ const RecurringTransactions = () => {
   };
 
   const handleDelete = useCallback(async (item) => {
-    if (!window.confirm(`Delete recurring "${item.category?.name || "Uncategorized"}" (₦${Number(item.amount).toLocaleString()})?`)) return;
-    await recurringTransactionService.deleteRecurringTransaction(item.id);
-    refetch();
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Recurring Transaction",
+      message: `Delete recurring "${item.category?.name || "Uncategorized"}" (₦${Number(item.amount).toLocaleString()})?`,
+      onConfirm: async () => {
+        await recurringTransactionService.deleteRecurringTransaction(item.id);
+        refetch();
+      },
+    });
   }, [refetch]);
 
   const openEdit = useCallback((item) => {
@@ -91,6 +99,14 @@ const RecurringTransactions = () => {
         onSubmit={editingItem ? handleEdit : handleCreate}
         categories={categories}
         initialData={editingItem}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
       />
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { X, Upload } from "lucide-react";
 import * as transactionService from "../services/api/transactionService";
 
-const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
+const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [], savingsPlans = [] }) => {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -17,11 +17,13 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
     amount: "",
     type: "Income",
     category: "",
+    currency: "NGN",
     notes: "",
     receipt: null,
     transaction_date: today,
     add_savings: false,
     savings_percentage: "",
+    savings: "",
     recurring: false,
     frequency: "Monthly",
     next_due_date: "",
@@ -139,17 +141,19 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
         party_name: sanitizeValue(formData.party_name) || undefined,
         amount: formData.amount ? Number(formData.amount) : undefined,
         type: formData.type,
-        // Drop category entirely if it resolved to NaN (unmatched receipt parse)
         category:
           parsedCategory && !isNaN(parsedCategory) ? parsedCategory : undefined,
+        currency: formData.currency,
         notes: sanitizeValue(formData.notes) || undefined,
-        // Append Z so Django gets a valid timezone-aware datetime
         transaction_date: formData.transaction_date
           ? `${formData.transaction_date}T00:00:00Z`
           : undefined,
         add_savings: formData.add_savings,
         savings_percentage: formData.savings_percentage
           ? Number(formData.savings_percentage)
+          : undefined,
+        savings: formData.add_savings && formData.savings
+          ? Number(formData.savings)
           : undefined,
         recurring: formData.recurring,
         frequency: formData.recurring ? formData.frequency : undefined,
@@ -195,11 +199,13 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
         amount: "",
         type: "Income",
         category: "",
+        currency: "NGN",
         notes: "",
         receipt: null,
         transaction_date: today,
         add_savings: false,
         savings_percentage: "",
+        savings: "",
         recurring: false,
         frequency: "Monthly",
         next_due_date: "",
@@ -283,6 +289,30 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
               required
               className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
             />
+          </div>
+
+          {/* Currency */}
+          <div>
+            <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+              Currency
+            </label>
+            <select
+              name="currency"
+              value={formData.currency}
+              onChange={handleChange}
+              className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            >
+              <option value="NGN">NGN</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+              <option value="JPY">JPY</option>
+              <option value="KES">KES</option>
+              <option value="ZAR">ZAR</option>
+              <option value="GHS">GHS</option>
+            </select>
           </div>
 
           {/* Type */}
@@ -476,6 +506,25 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
               Add to savings
             </label>
           </div>
+
+          {formData.add_savings && savingsPlans.length > 0 && (
+            <div>
+              <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+                Savings Plan
+              </label>
+              <select
+                name="savings"
+                value={formData.savings}
+                onChange={handleChange}
+                className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              >
+                <option value="">Select a plan</option>
+                {savingsPlans.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {formData.add_savings && (
             <div>

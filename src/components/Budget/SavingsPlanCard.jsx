@@ -1,5 +1,5 @@
 import React from "react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiEdit2, FiTrash2 } from "react-icons/fi";
 import BudgetProgressBar from "./BudgetProgressBar";
 
 const priorityColors = {
@@ -8,7 +8,7 @@ const priorityColors = {
   low: "bg-green-100 text-green-600",
 };
 
-const SavingsPlanCard = ({ plan, onRenew }) => {
+const SavingsPlanCard = ({ plan, onRenew, onEdit, onDelete }) => {
   const target = Number(plan.target_amount) || 0;
   const saved = Number(plan.savings_amount) || 0;
   const percent = target > 0 ? Math.min(100, (saved / target) * 100) : 0;
@@ -70,16 +70,36 @@ const SavingsPlanCard = ({ plan, onRenew }) => {
           )}
         </div>
 
-        {isCompleted && onRenew && (
-          <button
-            onClick={() => onRenew(plan)}
-            className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-            aria-label={`Renew ${plan.name}`}
-          >
-            <FiRefreshCw size={12} />
-            Renew
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(plan)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 cursor-pointer"
+              aria-label="Edit savings plan"
+            >
+              <FiEdit2 size={13} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(plan)}
+              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 cursor-pointer"
+              aria-label="Delete savings plan"
+            >
+              <FiTrash2 size={13} />
+            </button>
+          )}
+          {isCompleted && onRenew && (
+            <button
+              onClick={() => onRenew(plan)}
+              className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              aria-label={`Renew ${plan.name}`}
+            >
+              <FiRefreshCw size={12} />
+              Renew
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

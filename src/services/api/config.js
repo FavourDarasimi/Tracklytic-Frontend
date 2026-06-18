@@ -22,6 +22,7 @@ export const API_CONFIG = {
       CHANGE_PASSWORD: "/auth/v1/users/set_password/",
       RESEND_ACTIVATION: "/auth/v1/users/resend_activation/",
       ACTIVATE: "/auth/v1/users/activation/",
+      PROFILE: "/auth/v1/profile/",
     },
     // Tracker endpoints
     TRACKER: {
@@ -48,6 +49,7 @@ export const API_CONFIG = {
 
       // Saving Plans
       SAVING_PLANS: "/api/v1/saving-plans/",
+      SAVING_PLAN: (id) => `/api/v1/saving-plans/${id}/`,
       CHECK_SAVING_PLAN_STATUS: "/api/v1/check/saving/plan/status/",
       RENEW_SAVING_PLAN: (id) => `/api/v1/renew/saving/plan/${id}/`,
 

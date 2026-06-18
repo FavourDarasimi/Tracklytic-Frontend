@@ -10,6 +10,7 @@ const EditTransactionDrawer = ({ isOpen, onClose, onSubmit, categories = [], ini
     amount: "",
     type: "Income",
     category: "",
+    currency: "NGN",
     notes: "",
     transaction_date: today,
   });
@@ -23,6 +24,7 @@ const EditTransactionDrawer = ({ isOpen, onClose, onSubmit, categories = [], ini
       amount: initialData.amount || "",
       type: initialData.type || "Income",
       category: initialData.category?.id || (typeof initialData.category === "number" ? initialData.category : "") || "",
+      currency: initialData.currency || "NGN",
       notes: initialData.notes || "",
       transaction_date: initialData.transaction_date
         ? initialData.transaction_date.split("T")[0]
@@ -66,6 +68,7 @@ const EditTransactionDrawer = ({ isOpen, onClose, onSubmit, categories = [], ini
         amount: Number(formData.amount),
         type: formData.type,
         category: parsedCategory && !isNaN(parsedCategory) ? parsedCategory : null,
+        currency: formData.currency,
         notes: sanitizeValue(formData.notes) || undefined,
         transaction_date: formData.transaction_date
           ? `${formData.transaction_date}T00:00:00Z`
@@ -145,6 +148,29 @@ const EditTransactionDrawer = ({ isOpen, onClose, onSubmit, categories = [], ini
               required
               className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
             />
+          </div>
+
+          <div>
+            <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+              Currency
+            </label>
+            <select
+              name="currency"
+              value={formData.currency}
+              onChange={handleChange}
+              className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            >
+              <option value="NGN">NGN</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+              <option value="JPY">JPY</option>
+              <option value="KES">KES</option>
+              <option value="ZAR">ZAR</option>
+              <option value="GHS">GHS</option>
+            </select>
           </div>
 
           <div>

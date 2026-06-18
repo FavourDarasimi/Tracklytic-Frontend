@@ -283,6 +283,44 @@ export const updateProfile = async (profileData) => {
   }
 };
 
+/**
+ * Get user profile
+ * @returns {Promise<Object>} - User profile object
+ */
+export const getUserProfile = async () => {
+  try {
+    const response = await axiosInstance.get(
+      API_CONFIG.ENDPOINTS.AUTH.PROFILE,
+    );
+    return response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
+/**
+ * Update user profile
+ * @param {Object|FormData} profileData - Profile fields to update
+ * @returns {Promise<Object>} - Updated profile data
+ */
+export const updateUserProfile = async (profileData) => {
+  try {
+    const response = await axiosInstance.patch(
+      API_CONFIG.ENDPOINTS.AUTH.PROFILE,
+      profileData,
+    );
+    return response.data;
+  } catch (error) {
+    throw {
+      message: getErrorMessage(error),
+      originalError: error,
+    };
+  }
+};
+
 export default {
   login,
   register,
@@ -297,4 +335,6 @@ export default {
   activateAccount,
   changePassword,
   updateProfile,
+  getUserProfile,
+  updateUserProfile,
 };

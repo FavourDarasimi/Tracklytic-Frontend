@@ -1,11 +1,33 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { authService, categoryService, budgetService } from "@/services/api";
+import { authService, categoryService } from "@/services/api";
 import { FaRegUser } from "react-icons/fa6";
-import { FiLock, FiPieChart, FiTarget, FiSave, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiLock, FiPieChart, FiSave, FiEdit2, FiTrash2, FiUpload } from "react-icons/fi";
 import { IoAddOutline } from "react-icons/io5";
 import { RxCross2 } from "react-icons/rx";
 import { getCategoryConfig } from "../components/Transactions/transactionUtils";
+import ConfirmModal from "../components/ConfirmModal";
+
+const CURRENCIES = ["NGN", "USD", "EUR", "GBP", "CAD", "AUD", "JPY", "KES", "ZAR", "GHS"];
+
+const LOCALE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "fr", label: "French" },
+  { value: "es", label: "Spanish" },
+  { value: "de", label: "German" },
+  { value: "pt", label: "Portuguese" },
+  { value: "ar", label: "Arabic" },
+  { value: "zh", label: "Chinese" },
+  { value: "ja", label: "Japanese" },
+];
+
+const TIMEZONE_OPTIONS = [
+  "UTC", "Africa/Lagos", "Africa/Nairobi", "Africa/Johannesburg",
+  "Africa/Accra", "Africa/Cairo", "Europe/London", "Europe/Paris",
+  "Europe/Berlin", "America/New_York", "America/Chicago",
+  "America/Denver", "America/Los_Angeles", "Asia/Dubai",
+  "Asia/Tokyo", "Asia/Shanghai", "Asia/Kolkata",
+];
 
 const initialProfile = {
   username: "",
@@ -15,18 +37,11 @@ const initialProfile = {
   occupation: "",
   lastName: "",
   bio: "",
+  avatar: null,
+  locale: "en",
+  timezone: "UTC",
+  base_currency: "NGN",
 };
-
-const initialBudget = {
-  currency: "NGN",
-  budgetPeriod: "Monthly",
-  startDate: "",
-  spendingLimit: "",
-  alertThresholds: [],
-  overSpendingAlerts: false,
-};
-
-const thresholdOptions = ["50%", "75%", "90%"];
 
 const Settings = () => {
   const { user } = useAuth();
@@ -78,9 +93,6 @@ const Settings = () => {
       {/* ====== Categories ====== */}
       <CategoriesSection />
 
-      {/* ====== Budget Settings ====== */}
-      <BudgetSection />
-
     </div>
   );
 };
@@ -89,21 +101,26 @@ const Settings = () => {
    Profile Information
    ================================================================== */
 const ProfileSection = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, updateProfileData } = useAuth();
   const [profile, setProfile] = useState(initialProfile);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
     if (user) {
+      const p = user.profile || {};
       setProfile({
         username: user.username || "",
         email: user.email || "",
-        age: user.age || "",
-        phoneNumber: user.phone_number || "",
-        occupation: user.occupation || "",
+        age: p.age?.toString() || "",
+        phoneNumber: p.phone_number || "",
+        occupation: p.occupation || "",
         lastName: user.last_name || "",
-        bio: user.bio || "",
+        bio: p.bio || "",
+        avatar: null,
+        locale: p.locale || "en",
+        timezone: p.timezone || "UTC",
+        base_currency: p.base_currency || "NGN",
       });
     }
   }, [user]);
@@ -113,21 +130,31 @@ const ProfileSection = () => {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setProfile((prev) => ({ ...prev, avatar: file }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setMessage(null);
     try {
-      const updated = await authService.updateProfile({
+      const updatedUser = await authService.updateProfile({
         username: profile.username,
         email: profile.email,
         last_name: profile.lastName,
-        age: profile.age ? Number(profile.age) : undefined,
-        phone_number: profile.phoneNumber,
-        occupation: profile.occupation,
-        bio: profile.bio,
       });
-      updateUser(updated);
+      await updateProfileData({
+        age: profile.age ? Number(profile.age) : undefined,
+        phone_number: profile.phoneNumber || undefined,
+        occupation: profile.occupation || undefined,
+        bio: profile.bio || undefined,
+        locale: profile.locale,
+        timezone: profile.timezone,
+        base_currency: profile.base_currency,
+      });
+      updateUser({ ...updatedUser, profile: { ...user?.profile, ...updatedUser.profile } });
       setMessage({ type: "success", text: "Profile saved successfully!" });
     } catch (err) {
       setMessage({ type: "error", text: err?.message || "Failed to save profile" });
@@ -154,6 +181,60 @@ const ProfileSection = () => {
           <InputField label="Occupation" name="occupation" value={profile.occupation} onChange={handleChange} placeholder="Occupation" />
           <InputField label="Last Name" name="lastName" value={profile.lastName} onChange={handleChange} placeholder="Last Name" />
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">Locale</label>
+            <select
+              name="locale"
+              value={profile.locale}
+              onChange={handleChange}
+              className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
+            >
+              {LOCALE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">Timezone</label>
+            <select
+              name="timezone"
+              value={profile.timezone}
+              onChange={handleChange}
+              className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
+            >
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">Preferred Currency</label>
+            <select
+              name="base_currency"
+              value={profile.base_currency}
+              onChange={handleChange}
+              className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-medium text-[14px] text-gray-700 mb-1">Avatar</label>
+            <label className="flex items-center gap-2 rounded-lg p-2.5 w-full h-[43px] border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
+              <FiUpload size={16} className="text-gray-400" />
+              <span className="text-sm text-gray-500">{profile.avatar ? profile.avatar.name : "Upload photo"}</span>
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            </label>
+          </div>
+        </div>
+
         <div>
           <label className="block font-medium text-[14px] text-gray-700 mb-1">Bio</label>
           <textarea
@@ -230,6 +311,7 @@ const CategoriesSection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   useEffect(() => {
     const fetch = async () => {
@@ -268,13 +350,19 @@ const CategoriesSection = () => {
   };
 
   const handleDelete = useCallback(async (cat) => {
-    if (!window.confirm(`Delete category "${cat.name}"?`)) return;
-    try {
-      await categoryService.deleteCategory(cat.id);
-      setCategories((prev) => prev.filter((c) => c.id !== cat.id));
-    } catch (err) {
-      console.error("Failed to delete category", err);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Category",
+      message: `Delete category "${cat.name}"?`,
+      onConfirm: async () => {
+        try {
+          await categoryService.deleteCategory(cat.id);
+          setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+        } catch (err) {
+          console.error("Failed to delete category", err);
+        }
+      },
+    });
   }, []);
 
   const openEdit = useCallback((cat) => {
@@ -365,6 +453,14 @@ const CategoriesSection = () => {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </SectionCard>
   );
 };
@@ -462,113 +558,6 @@ const AddCategoryModal = ({ onSubmit, onClose, initialData }) => {
 /* ==================================================================
    Budget Settings
    ================================================================== */
-const BudgetSection = () => {
-  const [form, setForm] = useState(initialBudget);
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState(null);
-
-  const handleChange = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleThresholdToggle = (value) => {
-    setForm((prev) => ({
-      ...prev,
-      alertThresholds: prev.alertThresholds.includes(value)
-        ? prev.alertThresholds.filter((t) => t !== value)
-        : [...prev.alertThresholds, value],
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setMessage(null);
-    try {
-      await budgetService.addGeneralBudget({
-        amount: form.spendingLimit ? Number(form.spendingLimit) : undefined,
-        period: form.budgetPeriod.toLowerCase(),
-        currency: form.currency,
-        start_date: form.startDate || undefined,
-        alert_thresholds: form.alertThresholds,
-        over_spending_alerts: form.overSpendingAlerts,
-      });
-      setMessage({ type: "success", text: "Budget settings saved successfully!" });
-    } catch (err) {
-      setMessage({ type: "error", text: err?.message || "Failed to save budget settings" });
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => setMessage(null), 3000);
-    }
-  };
-
-  return (
-    <SectionCard icon={<FiTarget size={22} className="text-green-600" />} title="Budget Settings" description="Set your budget preferences and spending limits.">
-      {message && <MessageBanner message={message} />}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SelectField label="Preferred Currency" value={form.currency} onChange={handleChange("currency")}>
-            <option value="NGN">NGN — Nigerian Naira</option>
-            <option value="USD">USD — US Dollar</option>
-            <option value="GBP">GBP — British Pound</option>
-          </SelectField>
-          <SelectField label="Budget Period" value={form.budgetPeriod} onChange={handleChange("budgetPeriod")}>
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
-          </SelectField>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium text-[14px] text-gray-700 mb-1">Budget Start Date</label>
-            <input
-              type="date"
-              value={form.startDate}
-              onChange={handleChange("startDate")}
-              className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
-            />
-          </div>
-          <InputField label="Overall Spending Limit" name="spendingLimit" type="number" value={form.spendingLimit} onChange={handleChange("spendingLimit")} placeholder="e.g. 50000" />
-        </div>
-
-        <div>
-          <label className="block font-medium text-[14px] text-gray-700 mb-2">Alert Thresholds</label>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {thresholdOptions.map((threshold) => (
-              <label key={threshold} className="flex items-center gap-x-1.5 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.alertThresholds.includes(threshold)}
-                  onChange={() => handleThresholdToggle(threshold)}
-                  className="accent-green-600 w-4 h-4"
-                />
-                {threshold}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-x-2">
-          <label className="font-medium text-[14px] text-gray-700 whitespace-nowrap">Over-Spending Alerts:</label>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={form.overSpendingAlerts}
-              onChange={(e) => setForm((prev) => ({ ...prev, overSpendingAlerts: e.target.checked }))}
-            />
-            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-600/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600" />
-          </label>
-        </div>
-
-        <SaveButton isSaving={isSaving} text={isSaving ? "Saving..." : "Save Budget Settings"} />
-      </form>
-    </SectionCard>
-  );
-};
-
 /* ==================================================================
    Shared UI Components
    ================================================================== */
@@ -610,19 +599,6 @@ const InputField = ({ label, name, type = "text", value, onChange, placeholder }
       className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
       placeholder={placeholder}
     />
-  </div>
-);
-
-const SelectField = ({ label, value, onChange, children }) => (
-  <div>
-    <label className="block font-medium text-[14px] text-gray-700 mb-1">{label}</label>
-    <select
-      value={value}
-      onChange={onChange}
-      className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
-    >
-      {children}
-    </select>
   </div>
 );
 
