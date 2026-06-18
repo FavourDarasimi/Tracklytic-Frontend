@@ -1,14 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { FiSave } from "react-icons/fi";
 
-const AddBudgetModal = ({ isOpen, onClose, onSubmit, categories }) => {
+const AddBudgetModal = ({ isOpen, onClose, onSubmit, categories, initialData }) => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [period, setPeriod] = useState("monthly");
   const [categoryId, setCategoryId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialData) {
+      setName(initialData.name || "");
+      setAmount(initialData.amount || "");
+      setPeriod(initialData.budget_plan?.toLowerCase() || initialData.period?.toLowerCase() || "monthly");
+      setCategoryId(initialData.category?.id || (typeof initialData.category === "number" ? initialData.category : "") || "");
+    } else {
+      setName("");
+      setAmount("");
+      setPeriod("monthly");
+      setCategoryId("");
+    }
+    setError(null);
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -21,36 +44,30 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, categories }) => {
     setIsSaving(true);
     setError(null);
     try {
-      if (categoryId) {
-        await onSubmit({
-          category: Number(categoryId),
-          amount: Number(amount),
-          period,
-          name: name.trim() || undefined,
-        });
-      } else {
-        await onSubmit({
-          amount: Number(amount),
-          period,
-          name: name.trim() || undefined,
-        });
-      }
+      const payload = {
+        budget_amount: Number(amount),
+        budget_plan: period,
+      };
+      if (categoryId) payload.category = Number(categoryId);
+      await onSubmit(payload);
       setName("");
       setAmount("");
       setPeriod("monthly");
       setCategoryId("");
     } catch (err) {
-      setError(err?.message || "Failed to create budget");
+      setError(err?.message || "Failed to save budget");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const isEdit = !!initialData;
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl">
+    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center" onClick={onClose}>
+      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[19px] font-semibold">Create Budget</h2>
+          <h2 className="text-[19px] font-semibold">{isEdit ? "Edit Budget" : "Create Budget"}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer" aria-label="Close">
             <RxCross2 size={20} className="text-gray-500" />
           </button>
@@ -108,6 +125,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, categories }) => {
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 className="rounded-lg p-2.5 w-full h-[43px] border border-gray-200 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20 text-sm transition"
+                disabled={isEdit && categoryId !== ""}
               >
                 <option value="">General Budget</option>
                 {categories?.map((cat) => (
@@ -133,7 +151,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, categories }) => {
               className="flex items-center gap-x-2 bg-green-600 text-white py-2 px-5 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-60 cursor-pointer"
             >
               <FiSave size={16} />
-              {isSaving ? "Creating..." : "Create Budget"}
+              {isSaving ? "Saving..." : isEdit ? "Update Budget" : "Create Budget"}
             </button>
           </div>
         </form>

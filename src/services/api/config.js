@@ -27,9 +27,15 @@ export const API_CONFIG = {
     TRACKER: {
       // Categories
       CATEGORIES: "/api/v1/categories/",
+      CATEGORY: (id) => `/api/v1/categories/${id}/`,
 
       // Transactions
       TRANSACTIONS: "/api/v1/transactions/",
+      TRANSACTION: (id) => `/api/v1/transactions/${id}/`,
+      RESTORE_TRANSACTION: (id) => `/api/v1/transactions/${id}/restore/`,
+      BULK_DELETE_TRANSACTIONS: "/api/v1/transactions/bulk_delete/",
+      EXPORT_CSV: "/api/v1/transactions/export_csv/",
+      MAKE_TRANSACTION_RECURRING: (id) => `/api/v1/transactions/${id}/make_recurring/`,
       UPLOAD_RECEIPT: "/api/v1/transaction/upload/receipt/",
 
       // General Budget
@@ -44,6 +50,10 @@ export const API_CONFIG = {
       SAVING_PLANS: "/api/v1/saving-plans/",
       CHECK_SAVING_PLAN_STATUS: "/api/v1/check/saving/plan/status/",
       RENEW_SAVING_PLAN: (id) => `/api/v1/renew/saving/plan/${id}/`,
+
+      // Recurring Transactions
+      RECURRING_TRANSACTIONS: "/api/v1/recurring-transactions/",
+      RECURRING_TRANSACTION: (id) => `/api/v1/recurring-transactions/${id}/`,
 
       // AI Insights
       AI_INSIGHTS: "/api/v1/ai/insights/",

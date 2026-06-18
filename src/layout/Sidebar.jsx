@@ -9,6 +9,7 @@ import {
   ChartLineData01Icon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
+  RepeatIcon,
 } from "hugeicons-react";
 
 const navItems = [
@@ -30,6 +31,12 @@ const navItems = [
     icon: ChartLineData01Icon,
     href: "/budget",
   },
+  {
+    key: "recurring",
+    label: "Recurring",
+    icon: RepeatIcon,
+    href: "/recurring-transactions",
+  },
   { key: "statistics", label: "Statistics", icon: ChartIcon, href: "/statistics" },
 ];
 
@@ -42,6 +49,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
     if (pathname.startsWith("/dashboard")) return "dashboard";
     if (pathname.startsWith("/transactions")) return "transactions";
     if (pathname.startsWith("/budget")) return "budget";
+    if (pathname.startsWith("/recurring-transactions")) return "recurring";
     if (pathname.startsWith("/statistics")) return "statistics";
     return "dashboard";
   };

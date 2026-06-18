@@ -1,48 +1,39 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FaWallet, FaArrowDownLong, FaArrowUpLong } from "react-icons/fa6";
+import { Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 const SummaryStats = ({
-  totalTransactions = 45,
-  totalIncome = 125000,
-  totalExpenses = 45000,
+  totalTransactions = 0,
+  totalIncome = 0,
+  totalExpenses = 0,
 }) => {
   const stats = [
     {
       id: 1,
-      icon: FaWallet,
+      icon: Wallet,
       label: "Total Transactions",
       value: totalTransactions,
-      suffix: "",
-      bgColor: "bg-blue-50",
+      prefix: "",
+      iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
-      borderColor: "border-blue-100",
-      change: "+12%",
-      changeColor: "text-green-600",
     },
     {
       id: 2,
-      icon: FaArrowDownLong,
+      icon: ArrowDownLeft,
       label: "Total Income",
       value: totalIncome,
-      suffix: "₦",
-      bgColor: "bg-green-50",
+      prefix: "₦",
+      iconBg: "bg-green-100",
       iconColor: "text-green-600",
-      borderColor: "border-green-100",
-      change: "+8.5%",
-      changeColor: "text-green-600",
     },
     {
       id: 3,
-      icon: FaArrowUpLong,
+      icon: ArrowUpRight,
       label: "Total Expenses",
       value: totalExpenses,
-      suffix: "₦",
-      bgColor: "bg-red-50",
+      prefix: "₦",
+      iconBg: "bg-red-100",
       iconColor: "text-red-600",
-      borderColor: "border-red-100",
-      change: "+3.2%",
-      changeColor: "text-green-600",
     },
   ];
 
@@ -50,19 +41,13 @@ const SummaryStats = ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 },
-    },
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
 
   return (
@@ -70,7 +55,7 @@ const SummaryStats = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-flow-col auto-cols-[11rem]  md:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto"
+      className="grid grid-cols-1 sm:grid-cols-3 gap-4"
     >
       {stats.map((stat) => {
         const Icon = stat.icon;
@@ -78,33 +63,22 @@ const SummaryStats = ({
           <motion.div
             key={stat.id}
             variants={itemVariants}
-            whileHover={{ y: -4 }}
-            className={` border  bg-white border-gray-300 rounded-xl p-5 sm:p-6 md:p-7 transition-all hover:shadow-lg cursor-pointer`}
+            className="bg-white border border-gray-200 rounded-2xl p-5 transition-all hover:shadow-md hover:border-gray-300"
           >
-            {/* Header with Icon */}
-            <div className="flex items-start justify-between mb-4">
-              <div className={`${stat.iconColor} text-xl sm:text-2xl`}>
-                <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.iconBg}`}>
+                <Icon size={24} className={stat.iconColor} />
               </div>
-              {/* <span
-                className={`text-xs sm:text-sm font-semibold ${stat.changeColor}`}
-              >
-                {stat.change}
-              </span> */}
+              <div>
+                <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
+                <p className="text-xl font-bold text-gray-900 mt-0.5">
+                  {stat.prefix}
+                  {typeof stat.value === "number"
+                    ? stat.value.toLocaleString()
+                    : stat.value}
+                </p>
+              </div>
             </div>
-
-            {/* Label */}
-            <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
-              {stat.label}
-            </p>
-
-            {/* Value */}
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-              {stat.suffix}
-              {typeof stat.value === "number"
-                ? stat.value.toLocaleString()
-                : stat.value}
-            </p>
           </motion.div>
         );
       })}

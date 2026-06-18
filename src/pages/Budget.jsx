@@ -24,6 +24,7 @@ const Budget = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   const [showAddBudget, setShowAddBudget] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(null);
   const [showAddSavings, setShowAddSavings] = useState(false);
 
   const fetchGeneralBudgets = useCallback(async () => {
@@ -84,6 +85,16 @@ const Budget = () => {
   const remaining = Math.max(0, totalBudget - totalSpent);
   const savingsCount = savingsPlans.length;
 
+  const handleOpenAddBudget = () => {
+    setEditingBudget(null);
+    setShowAddBudget(true);
+  };
+
+  const handleEditBudget = (budget) => {
+    setEditingBudget(budget);
+    setShowAddBudget(true);
+  };
+
   const handleCreateBudget = async (data) => {
     if (data.category) {
       await budgetService.addCategoryBudget(data);
@@ -93,6 +104,29 @@ const Budget = () => {
     setShowAddBudget(false);
     await Promise.all([fetchGeneralBudgets(), fetchCategoryBudgets()]);
   };
+
+  const handleUpdateBudget = async (data) => {
+    if (data.category) {
+      await budgetService.editCategoryBudget(editingBudget.id, data);
+    } else {
+      await budgetService.editGeneralBudget(editingBudget.id, data);
+    }
+    setEditingBudget(null);
+    setShowAddBudget(false);
+    await Promise.all([fetchGeneralBudgets(), fetchCategoryBudgets()]);
+  };
+
+  const handleDeleteGeneralBudget = useCallback(async (budget) => {
+    if (!window.confirm(`Delete general budget (₦${Number(budget.amount).toLocaleString()})?`)) return;
+    await budgetService.deleteGeneralBudget(budget.id);
+    await fetchGeneralBudgets();
+  }, [fetchGeneralBudgets]);
+
+  const handleDeleteCategoryBudget = useCallback(async (budget) => {
+    if (!window.confirm(`Delete category budget for "${budget.category?.name || "Unknown"}"?`)) return;
+    await budgetService.deleteCategoryBudget(budget.id);
+    await fetchCategoryBudgets();
+  }, [fetchCategoryBudgets]);
 
   const handleCreateSavings = async (data) => {
     await savingPlanService.addSavingPlan(data);
@@ -157,7 +191,7 @@ const Budget = () => {
             </p>
           </div>
           <button
-            onClick={() => setShowAddBudget(true)}
+            onClick={handleOpenAddBudget}
             className="flex items-center gap-x-1.5 bg-green-600 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors whitespace-nowrap flex-shrink-0 cursor-pointer"
           >
             Add Budget
@@ -170,7 +204,9 @@ const Budget = () => {
           <GeneralBudgetList
             budgets={generalBudgets}
             isLoading={isLoadingGeneral}
-            onAdd={() => setShowAddBudget(true)}
+            onAdd={handleOpenAddBudget}
+            onEdit={handleEditBudget}
+            onDelete={handleDeleteGeneralBudget}
           />
         </div>
 
@@ -180,7 +216,9 @@ const Budget = () => {
           <CategoryBudgetList
             budgets={categoryBudgets}
             isLoading={isLoadingCategory}
-            onAdd={() => setShowAddBudget(true)}
+            onAdd={handleOpenAddBudget}
+            onEdit={handleEditBudget}
+            onDelete={handleDeleteCategoryBudget}
           />
         </div>
       </div>
@@ -216,9 +254,10 @@ const Budget = () => {
       {/* Modals */}
       <AddBudgetModal
         isOpen={showAddBudget}
-        onClose={() => setShowAddBudget(false)}
-        onSubmit={handleCreateBudget}
+        onClose={() => { setShowAddBudget(false); setEditingBudget(null); }}
+        onSubmit={editingBudget ? handleUpdateBudget : handleCreateBudget}
         categories={categories}
+        initialData={editingBudget}
       />
 
       <AddSavingsModal

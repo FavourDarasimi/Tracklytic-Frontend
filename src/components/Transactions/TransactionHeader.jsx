@@ -1,59 +1,86 @@
-import React, { useState } from "react";
-import { FaSliders, FaPlus } from "react-icons/fa6";
-import { FaSearch } from "react-icons/fa";
+import React, { memo, useState, useRef, useEffect } from "react";
+import { SlidersHorizontal, Search } from "lucide-react";
 import { motion } from "framer-motion";
 
-const TransactionHeader = ({ onAddClick, onFilterClick, onSearch }) => {
+const TransactionHeader = ({ onFilterClick, onSearch, filterPanel, isFilterOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const containerRef = useRef(null);
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    onSearch?.(e.target.value);
+  const triggerSearch = () => {
+    onSearch?.(searchQuery);
   };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      triggerSearch();
+    }
+  };
+
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        onFilterClick();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isFilterOpen, onFilterClick]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 sm:space-y-6"
+      className="space-y-5"
     >
-      {/* Title Section */}
-      <div className="space-y-1 sm:space-y-2">
-        <h1 className="text-2xl sm:text-3xl md:text-[32px] font-bold text-gray-900">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           Transactions
         </h1>
-        <p className="text-xs sm:text-sm md:text-base text-gray-600">
+        <p className="text-sm text-gray-500">
           Track and manage all your income and expenses
         </p>
       </div>
 
-      {/* Search and Actions */}
-      <div className="flex  gap-3 sm:gap-4 items-stretch sm:items-center">
-        {/* Search Bar */}
-        <div className="relative flex-1">
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
           <input
             type="text"
             placeholder="Search transactions..."
             value={searchQuery}
-            onChange={handleSearchChange}
-            className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-400"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder-gray-400"
           />
+          <button
+            type="button"
+            onClick={triggerSearch}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors cursor-pointer"
+          >
+            <Search size={16} />
+          </button>
         </div>
 
-        {/* Filter Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onFilterClick}
-          className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 sm:py-3 rounded-lg hover:border-green-200 hover:bg-green-50 transition-all font-medium text-xs sm:text-sm"
-        >
-          <FaSliders size={14} />
-          <span className="hidden sm:inline">Filters</span>
-        </motion.button>
+        <div className="relative" ref={containerRef}>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onFilterClick}
+            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl hover:border-green-300 hover:text-green-600 hover:bg-green-50 transition-all text-sm font-medium cursor-pointer"
+          >
+            <SlidersHorizontal size={16} />
+            <span className="hidden sm:inline">Filters</span>
+          </motion.button>
+
+          {filterPanel && isFilterOpen && (
+            <div className="absolute right-0 top-full mt-2 z-50">
+              {filterPanel}
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
 };
 
-export default TransactionHeader;
+export default memo(TransactionHeader);

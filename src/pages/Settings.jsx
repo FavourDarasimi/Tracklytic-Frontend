@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { authService, categoryService, budgetService } from "@/services/api";
 import { FaRegUser } from "react-icons/fa6";
-import { FiLock, FiPieChart, FiTarget, FiSave } from "react-icons/fi";
+import { FiLock, FiPieChart, FiTarget, FiSave, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { IoAddOutline } from "react-icons/io5";
 import { RxCross2 } from "react-icons/rx";
+import { getCategoryConfig } from "../components/Transactions/transactionUtils";
 
 const initialProfile = {
   username: "",
@@ -227,7 +228,8 @@ const PasswordSection = () => {
 const CategoriesSection = () => {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -248,10 +250,41 @@ const CategoriesSection = () => {
     try {
       const created = await categoryService.addCategory(data);
       setCategories((prev) => [...prev, created]);
-      setShowAdd(false);
+      setShowModal(false);
     } catch (err) {
       console.error("Failed to add category", err);
     }
+  };
+
+  const handleEdit = async (data) => {
+    try {
+      const updated = await categoryService.updateCategory(editingCategory.id, data);
+      setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? { ...c, ...updated } : c)));
+      setEditingCategory(null);
+      setShowModal(false);
+    } catch (err) {
+      console.error("Failed to update category", err);
+    }
+  };
+
+  const handleDelete = useCallback(async (cat) => {
+    if (!window.confirm(`Delete category "${cat.name}"?`)) return;
+    try {
+      await categoryService.deleteCategory(cat.id);
+      setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+    } catch (err) {
+      console.error("Failed to delete category", err);
+    }
+  }, []);
+
+  const openEdit = useCallback((cat) => {
+    setEditingCategory(cat);
+    setShowModal(true);
+  }, []);
+
+  const openAdd = () => {
+    setEditingCategory(null);
+    setShowModal(true);
   };
 
   return (
@@ -261,7 +294,7 @@ const CategoriesSection = () => {
       description="Manage your expense categories."
       action={
         <button
-          onClick={() => setShowAdd(true)}
+          onClick={openAdd}
           className="flex items-center gap-x-1.5 bg-green-600 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors whitespace-nowrap flex-shrink-0"
         >
           <IoAddOutline size={18} />
@@ -269,7 +302,13 @@ const CategoriesSection = () => {
         </button>
       }
     >
-      {showAdd && <AddCategoryModal onSubmit={handleAdd} onClose={() => setShowAdd(false)} />}
+      {showModal && (
+        <AddCategoryModal
+          onSubmit={editingCategory ? handleEdit : handleAdd}
+          onClose={() => { setShowModal(false); setEditingCategory(null); }}
+          initialData={editingCategory}
+        />
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -284,24 +323,46 @@ const CategoriesSection = () => {
         <p className="text-sm text-gray-500 mt-4">No categories yet. Click "Add Category" to create one.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              className="flex items-center gap-3 p-4 rounded-xl bg-white border border-gray-200 hover:shadow-md transition-shadow"
-            >
-              <div className="w-8 h-8 rounded-lg flex-shrink-0 border border-black/10" style={{ backgroundColor: cat.color || "#44bca2" }} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-800 truncate">{cat.name}</p>
-                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
-                  cat.type === "income" || cat.type === "Income"
-                    ? "bg-green-50 text-green-600"
-                    : "bg-red-50 text-red-500"
-                }`}>
-                  {cat.type}
-                </span>
+          {categories.map((cat) => {
+            const config = getCategoryConfig(cat.name);
+            const Icon = config.icon;
+            return (
+              <div
+                key={cat.id}
+                className="flex items-center gap-3 p-4 rounded-xl bg-white border border-gray-200 hover:shadow-md transition-shadow group relative"
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${config.bg} ring-1 ${config.ring}`}>
+                  <Icon size={20} className={config.text} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{cat.name}</p>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                    cat.type === "income" || cat.type === "Income"
+                      ? "bg-green-50 text-green-600"
+                      : "bg-red-50 text-red-500"
+                  }`}>
+                    {cat.type}
+                  </span>
+                </div>
+                <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => openEdit(cat)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 cursor-pointer"
+                    aria-label="Edit category"
+                  >
+                    <FiEdit2 size={13} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cat)}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 cursor-pointer"
+                    aria-label="Delete category"
+                  >
+                    <FiTrash2 size={13} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </SectionCard>
@@ -311,10 +372,28 @@ const CategoriesSection = () => {
 /* ==================================================================
    Add Category Modal
    ================================================================== */
-const AddCategoryModal = ({ onSubmit, onClose }) => {
+const AddCategoryModal = ({ onSubmit, onClose, initialData }) => {
   const [name, setName] = useState("");
   const [type, setType] = useState("Expense");
   const [color, setColor] = useState("#44bca2");
+
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || "");
+      setType(initialData.type === "Income" ? "Income" : "Expense");
+      setColor(initialData.color || "#44bca2");
+    } else {
+      setName("");
+      setType("Expense");
+      setColor("#44bca2");
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -322,11 +401,13 @@ const AddCategoryModal = ({ onSubmit, onClose }) => {
     onSubmit({ name: name.trim(), type: type.toLowerCase(), color });
   };
 
+  const isEdit = !!initialData;
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl">
+    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center" onClick={onClose}>
+      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center">
-          <h1 className="text-[19px] font-semibold">Add Category</h1>
+          <h1 className="text-[19px] font-semibold">{isEdit ? "Edit Category" : "Add Category"}</h1>
           <RxCross2 size={20} onClick={onClose} className="cursor-pointer text-gray-500 hover:text-gray-800" />
         </div>
 
@@ -370,7 +451,7 @@ const AddCategoryModal = ({ onSubmit, onClose }) => {
             type="submit"
             className="bg-green-600 text-white py-2 px-5 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors"
           >
-            Add
+            {isEdit ? "Update" : "Add"}
           </button>
         </form>
       </div>

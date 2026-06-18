@@ -1,24 +1,47 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaChevronDown } from "react-icons/fa6";
+import {
+  ArrowUpDown,
+  FolderOpen,
+  DollarSign,
+  CalendarDays,
+  Trash2,
+  RotateCcw,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 
-const TransactionFilters = ({ isOpen, onClose, onApply }) => {
+const TYPE_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "Income", label: "Income" },
+  { value: "Expense", label: "Expense" },
+];
+
+const TransactionFilters = ({ isOpen, onClose, onApply, categories = [] }) => {
   const [filters, setFilters] = useState({
     type: "all",
     category: "all",
-    amountMin: 0,
-    amountMax: 1000000,
-    merchant: "all",
-    dateFrom: "",
-    dateTo: "",
+    amount_min: "",
+    amount_max: "",
+    date_from: "",
+    date_to: "",
+    deleted: false,
   });
 
-  const handleFilterChange = (key, value) => {
+  const handleChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApply = () => {
-    onApply?.(filters);
+    const payload = {};
+    if (filters.type !== "all") payload.type = filters.type;
+    if (filters.category !== "all") payload.category = Number(filters.category);
+    if (filters.amount_min) payload.amount_min = Number(filters.amount_min);
+    if (filters.amount_max) payload.amount_max = Number(filters.amount_max);
+    if (filters.date_from) payload.date_from = filters.date_from;
+    if (filters.date_to) payload.date_to = filters.date_to;
+    if (filters.deleted) payload.deleted = true;
+    onApply?.(payload);
     onClose?.();
   };
 
@@ -26,180 +49,72 @@ const TransactionFilters = ({ isOpen, onClose, onApply }) => {
     setFilters({
       type: "all",
       category: "all",
-      amountMin: 0,
-      amountMax: 1000000,
-      merchant: "all",
-      dateFrom: "",
-      dateTo: "",
+      amount_min: "",
+      amount_max: "",
+      date_from: "",
+      date_to: "",
+      deleted: false,
     });
   };
 
-  const filterOptions = {
-    categories: [
-      { value: "all", label: "All" },
-      { value: "health", label: "Health & Fitness" },
-      { value: "savings", label: "Savings" },
-      { value: "salary", label: "Salary" },
-      { value: "food", label: "Food" },
-      { value: "shopping", label: "Shopping" },
-    ],
-    types: [
-      { value: "all", label: "All" },
-      { value: "income", label: "Income" },
-      { value: "expense", label: "Expense" },
-    ],
-    merchants: [
-      { value: "all", label: "All Merchants" },
-      { value: "amazon", label: "Amazon Shopping" },
-      { value: "uber", label: "Uber" },
-      { value: "netflix", label: "Netflix" },
-      { value: "starbucks", label: "Starbucks" },
-    ],
-  };
-
-  // Dual Range Slider Component
-  const DualRangeSlider = ({ min, max, valueMin, valueMax, onChange }) => {
-    const sliderRef = useRef(null);
-    const [isDragging, setIsDragging] = useState(null); // 'min' or 'max'
-    const [currentMin, setCurrentMin] = useState(valueMin);
-    const [currentMax, setCurrentMax] = useState(valueMax);
-
-    // Update local state when props change
-    useEffect(() => {
-      setCurrentMin(valueMin);
-      setCurrentMax(valueMax);
-    }, [valueMin, valueMax]);
-
-    const handleMouseDown = (e, type) => {
-      setIsDragging(type);
-    };
-
-    const handleMouseMove = (e) => {
-      if (!isDragging || !sliderRef.current) return;
-
-      const rect = sliderRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percentage = Math.max(0, Math.min(1, x / rect.width));
-      const value = Math.round(min + (max - min) * percentage);
-
-      if (isDragging === "min") {
-        setCurrentMin(Math.min(value, currentMax));
-      } else {
-        setCurrentMax(Math.max(value, currentMin));
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(null);
-      onChange(currentMin, currentMax);
-    };
-
-    useEffect(() => {
-      if (isDragging) {
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-        return () => {
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-      }
-    }, [isDragging, currentMin, currentMax]);
-
-    const minPercent = ((currentMin - min) / (max - min)) * 100;
-    const maxPercent = ((currentMax - min) / (max - min)) * 100;
-
-    return (
-      <div className="relative w-full">
-        <div
-          ref={sliderRef}
-          className="relative h-2 bg-gray-200 rounded-full cursor-pointer select-none"
-          onMouseDown={(e) => {
-            const rect = sliderRef.current.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const percentage = x / rect.width;
-            const value = Math.round(min + (max - min) * percentage);
-            const closerToMin =
-              Math.abs(value - valueMin) < Math.abs(value - valueMax);
-            setIsDragging(closerToMin ? "min" : "max");
-          }}
-        >
-          {/* Track */}
-          <div
-            className="absolute h-2 bg-green-600 rounded-full"
-            style={{
-              left: `${minPercent}%`,
-              width: `${maxPercent - minPercent}%`,
-            }}
-          />
-
-          {/* Min Handle */}
-          <div
-            className="absolute w-6 h-6 bg-green-600 border-2 border-white rounded-full -mt-2 shadow-md cursor-grab hover:scale-110 transition-transform"
-            style={{ left: `calc(${minPercent}% - 12px)` }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              handleMouseDown(e, "min");
-            }}
-          />
-
-          {/* Max Handle */}
-          <div
-            className="absolute w-6 h-6 bg-green-600 border-2 border-white rounded-full -mt-2 shadow-md cursor-grab hover:scale-110 transition-transform"
-            style={{ left: `calc(${maxPercent}% - 12px)` }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              handleMouseDown(e, "max");
-            }}
-          />
-        </div>
-
-        {/* Values Display */}
-        <div className="flex justify-between mt-2 text-sm text-gray-600">
-          <span>₦{currentMin.toLocaleString()}</span>
-          <span>₦{currentMax.toLocaleString()}</span>
-        </div>
-      </div>
-    );
-  };
+  const activeCount = [
+    filters.type !== "all",
+    filters.category !== "all",
+    filters.amount_min || filters.amount_max,
+    filters.date_from || filters.date_to,
+    filters.deleted,
+  ].filter(Boolean).length;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 10 }}
+          initial={{ opacity: 0, scale: 0.96, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 10 }}
+          exit={{ opacity: 0, scale: 0.96, y: 8 }}
           transition={{ duration: 0.18 }}
-          className="w-full max-w-xl rounded-3xl bg-white border border-gray-200 shadow-xl p-5 sm:p-6 text-sm text-gray-800"
+          className="w-full sm:w-[420px] rounded-2xl bg-white border border-gray-200 shadow-xl overflow-hidden"
         >
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Filter Transactions
-              </h3>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                <ArrowUpDown size={16} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+                {activeCount > 0 && (
+                  <p className="text-[11px] text-gray-500">{activeCount} active</p>
+                )}
+              </div>
             </div>
             <button
               type="button"
               onClick={handleReset}
-              className="text-green-600 text-sm font-semibold hover:text-green-700"
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-green-600 transition-colors"
             >
+              <RotateCcw size={13} />
               Reset
             </button>
           </div>
 
-          <div className="space-y-5">
+          <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
+            {/* Type */}
             <div>
-              <p className="mb-3 text-[14px] font-medium ">Transaction Type</p>
-              <div className="flex flex-wrap gap-3">
-                {filterOptions.types.map((option) => (
+              <div className="flex items-center gap-2 mb-3">
+                <ArrowUpDown size={15} className="text-gray-500" />
+                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</span>
+              </div>
+              <div className="flex gap-2">
+                {TYPE_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => handleFilterChange("type", option.value)}
-                    className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${
+                    onClick={() => handleChange("type", option.value)}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
                       filters.type === option.value
-                        ? "border-green-600 bg-green-600/10 text-green-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:border-green-300"
+                        ? "border-green-600 bg-green-50 text-green-700 ring-1 ring-green-600/20"
+                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                     }`}
                   >
                     {option.label}
@@ -208,98 +123,134 @@ const TransactionFilters = ({ isOpen, onClose, onApply }) => {
               </div>
             </div>
 
+            {/* Category */}
             <div>
-              <p className="mb-3 text-[14px] font-medium ">
-                Transaction Category
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {filterOptions.categories.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleFilterChange("category", option.value)}
-                    className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${
-                      filters.category === option.value
-                        ? "border-green-600 bg-green-600/10 text-green-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:border-green-300"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 mb-3">
+                <FolderOpen size={15} className="text-gray-500" />
+                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</span>
               </div>
-            </div>
-
-            <div>
-              <p className="mb-3 text-[14px] font-medium ">
-                Transaction Amount
-              </p>
-              <DualRangeSlider
-                min={0}
-                max={1000000}
-                valueMin={filters.amountMin}
-                valueMax={filters.amountMax}
-                onChange={(min, max) => {
-                  handleFilterChange("amountMin", min);
-                  handleFilterChange("amountMax", max);
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 text-[14px] font-medium">Merchant</label>
               <div className="relative">
                 <select
-                  value={filters.merchant}
-                  onChange={(e) =>
-                    handleFilterChange("merchant", e.target.value)
-                  }
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[13.5px] text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
+                  value={filters.category}
+                  onChange={(e) => handleChange("category", e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-gray-200 bg-white pl-4 pr-10 py-2.5 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer"
                 >
-                  {filterOptions.merchants.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  <option value="all">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
-                <FaChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                <ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-3 text-[14px] font-medium">
-                  Date (From)
-                </label>
-                <input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) =>
-                    handleFilterChange("dateFrom", e.target.value)
-                  }
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[13.5px] text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
-                />
+            {/* Amount Range */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign size={15} className="text-gray-500" />
+                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount Range</span>
               </div>
-
-              <div>
-                <label className="mb-3 text-[14px] font-medium">
-                  Date (To)
-                </label>
-                <input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[13.5px] text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">₦</span>
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.amount_min}
+                    onChange={(e) => handleChange("amount_min", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-8 pr-3 py-2.5 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">₦</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.amount_max}
+                    onChange={(e) => handleChange("amount_max", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-8 pr-3 py-2.5 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all placeholder:text-gray-400"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Date Range */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarDays size={15} className="text-gray-500" />
+                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Date Range</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1.5 font-medium">From</label>
+                  <input
+                    type="date"
+                    value={filters.date_from}
+                    onChange={(e) => handleChange("date_from", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1.5 font-medium">To</label>
+                  <input
+                    type="date"
+                    value={filters.date_to}
+                    onChange={(e) => handleChange("date_to", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Deleted Toggle */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trash2 size={15} className="text-gray-500" />
+                  <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Deleted</span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={filters.deleted}
+                  onClick={() => handleChange("deleted", !filters.deleted)}
+                  className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${
+                    filters.deleted ? "bg-red-500" : "bg-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
+                      filters.deleted ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+              {filters.deleted && (
+                <p className="mt-1.5 text-[11px] text-gray-500">
+                  Include soft-deleted transactions
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+            >
+              Clear
+            </button>
             <button
               type="button"
               onClick={handleApply}
-              className="w-full rounded-2xl bg-green-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+              className="flex-1 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-all shadow-sm flex items-center justify-center gap-2"
             >
-              Apply Filter
+              <Check size={16} />
+              Apply
             </button>
           </div>
         </motion.div>

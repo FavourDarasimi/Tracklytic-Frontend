@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { FiSave } from "react-icons/fi";
 
@@ -10,6 +10,13 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
   const [priority, setPriority] = useState("medium");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -42,8 +49,8 @@ const AddSavingsModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl">
+    <div className="fixed inset-0 z-50 bg-black/30 grid place-items-center" onClick={onClose}>
+      <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[19px] font-semibold">New Savings Goal</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer" aria-label="Close">

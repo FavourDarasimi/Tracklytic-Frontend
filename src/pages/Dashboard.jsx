@@ -60,7 +60,7 @@ const Dashboard = () => {
           </h1>
         </div>
       </div>
-      {/* 
+      {/*
       {error && (
         <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -71,7 +71,7 @@ const Dashboard = () => {
 
       <div className="flex flex-col 2xl:flex-row gap-5 mt-5 lg:mt-6">
         <div className="w-full xl:flex-1 min-w-0">
-          <div className="grid grid-flow-col auto-cols-[11rem] gap-4 overflow-x-auto md:grid-cols-4 md:grid-flow-row md:auto-cols-auto md:overflow-x-hidden lg:gap-4 xl:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4  lg:gap-4 xl:gap-4">
             <div className="border border-gray-200 bg-white p-3 xl:p-4 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between pb-2 xl:pb-3">
                 <p className="text-xs font-medium text-gray-600 truncate pr-1">

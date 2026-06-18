@@ -133,6 +133,28 @@ export const getCategoryBudgets = async () => {
   }
 };
 
+export const deleteGeneralBudget = async (id) => {
+  try {
+    const response = await axiosInstance.delete(
+      API_CONFIG.ENDPOINTS.TRACKER.GENERAL_BUDGET(id),
+    );
+    return response.data;
+  } catch (error) {
+    throw { message: getErrorMessage(error), originalError: error };
+  }
+};
+
+export const deleteCategoryBudget = async (id) => {
+  try {
+    const response = await axiosInstance.delete(
+      API_CONFIG.ENDPOINTS.TRACKER.CATEGORY_BUDGET(id),
+    );
+    return response.data;
+  } catch (error) {
+    throw { message: getErrorMessage(error), originalError: error };
+  }
+};
+
 export default {
   addGeneralBudget,
   editGeneralBudget,
@@ -140,4 +162,6 @@ export default {
   editCategoryBudget,
   getGeneralBudgets,
   getCategoryBudgets,
+  deleteGeneralBudget,
+  deleteCategoryBudget,
 };

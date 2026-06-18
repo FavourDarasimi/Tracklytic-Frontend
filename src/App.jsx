@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Settings from "./pages/Settings";
 import Budget from "./pages/Budget";
+import RecurringTransactions from "./pages/RecurringTransactions";
 import Statistics from "./pages/Statistics";
 import MainLayout from "./layout/MainLayout";
 import { AuthProvider } from "./context/AuthContext";
@@ -57,6 +58,7 @@ function App() {
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/budget" element={<Budget />} />
+              <Route path="/recurring-transactions" element={<RecurringTransactions />} />
               <Route path="/statistics" element={<Statistics />} />
             </Route>
           </Routes>

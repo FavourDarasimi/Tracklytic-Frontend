@@ -3,14 +3,18 @@ import { Link, useLocation } from "react-router-dom";
 import {
   DashboardSquare01Icon,
   Wallet01Icon,
-  Settings01Icon,
+  ChartLineData01Icon,
+  ChartIcon,
   Add01Icon,
+  RepeatIcon,
 } from "hugeicons-react";
 
 const navItems = [
   { key: "dashboard", label: "Dashboard", icon: DashboardSquare01Icon, href: "/dashboard" },
   { key: "transactions", label: "Transactions", icon: Wallet01Icon, href: "/transactions" },
-  { key: "settings", label: "Settings", icon: Settings01Icon, href: "/settings" },
+  { key: "budget", label: "Budget", icon: ChartLineData01Icon, href: "/budget" },
+  { key: "recurring", label: "Recurring", icon: RepeatIcon, href: "/recurring-transactions" },
+  { key: "statistics", label: "Stats", icon: ChartIcon, href: "/statistics" },
 ];
 
 const MobileNavbar = ({ onAddTransaction }) => {
@@ -19,7 +23,9 @@ const MobileNavbar = ({ onAddTransaction }) => {
   const getActive = (pathname) => {
     if (pathname.startsWith("/dashboard")) return "dashboard";
     if (pathname.startsWith("/transactions")) return "transactions";
-    if (pathname.startsWith("/settings")) return "settings";
+    if (pathname.startsWith("/budget")) return "budget";
+    if (pathname.startsWith("/recurring-transactions")) return "recurring";
+    if (pathname.startsWith("/statistics")) return "statistics";
     return "dashboard";
   };
 
@@ -36,13 +42,13 @@ const MobileNavbar = ({ onAddTransaction }) => {
             <Link
               key={item.key}
               to={item.href}
-              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-lg transition-colors min-w-0 ${
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-0 ${
                 isActive
                   ? "text-green-600"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Icon size={22} />
+              <Icon size={20} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );

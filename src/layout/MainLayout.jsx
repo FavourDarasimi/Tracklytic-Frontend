@@ -23,13 +23,13 @@ const MainLayout = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto flex flex-col">
-        {/* Desktop Header */}
-        <div className="hidden lg:block sticky top-0 z-30 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200">
+        {/* Header — visible on all screens */}
+        <div className="sticky top-0 z-30 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200">
           <Navbar onAddTransaction={() => setShowAddTransaction(true)} />
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 px-4 md:px-6 xl:px-7 py-4 md:py-5">
+        <div className="flex-1 px-4 md:px-6 xl:px-7 py-4 md:py-5 pb-20 lg:pb-4 md:pb-5">
           <Outlet />
         </div>
       </main>

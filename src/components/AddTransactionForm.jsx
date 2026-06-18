@@ -1,9 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { X, Upload } from "lucide-react";
 import * as transactionService from "../services/api/transactionService";
 
 const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
   const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
 
   const [formData, setFormData] = useState({
     party_name: "",
@@ -16,6 +23,9 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
     add_savings: false,
     savings_percentage: "",
     recurring: false,
+    frequency: "Monthly",
+    next_due_date: "",
+    end_date: "",
     savings_note: "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -142,6 +152,9 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
           ? Number(formData.savings_percentage)
           : undefined,
         recurring: formData.recurring,
+        frequency: formData.recurring ? formData.frequency : undefined,
+        next_due_date: formData.recurring ? formData.next_due_date : undefined,
+        end_date: formData.recurring && formData.end_date ? formData.end_date : undefined,
         savings_note: sanitizeValue(formData.savings_note) || undefined,
       };
 
@@ -188,6 +201,9 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
         add_savings: false,
         savings_percentage: "",
         recurring: false,
+        frequency: "Monthly",
+        next_due_date: "",
+        end_date: "",
         savings_note: "",
       });
 
@@ -397,6 +413,51 @@ const AddTransactionForm = ({ isOpen, onClose, onSubmit, categories = [] }) => {
               Mark as recurring
             </label>
           </div>
+
+          {formData.recurring && (
+            <div className="space-y-4 pl-2 border-l-2 border-green-200">
+              <div>
+                <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+                  Frequency *
+                </label>
+                <select
+                  name="frequency"
+                  value={formData.frequency}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                >
+                  <option value="Daily">Daily</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Yearly">Yearly</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+                  Next Due Date *
+                </label>
+                <input
+                  type="date"
+                  name="next_due_date"
+                  value={formData.next_due_date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
+              <div>
+                <label className="text-[14px] font-medium text-gray-600 mb-2 block">
+                  End Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  name="end_date"
+                  value={formData.end_date}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Add Savings Checkbox */}
           <div className="flex items-center gap-2">
